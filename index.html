@@ -12,8 +12,15 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
 <link rel="stylesheet" href="shared.css">
 <style>
-  html, body { height: auto; min-height: 100vh; }
-  body { overflow-y: auto; }
+  /* shared.css locks scrolling for the game screens; this page must scroll,
+     and iOS WebKit needs the unlock on BOTH html and body */
+  html, body {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100svh;
+    overflow-y: auto;
+    -webkit-text-size-adjust: 100%;
+  }
 
   #hub {
     min-height: 100%;

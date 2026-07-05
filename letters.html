@@ -2,11 +2,56 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Letter Pops 🔤 · Prisha's Playground</title>
 <meta name="description" content="Press any key and watch letters burst into emojis — a free toddler alphabet game from Prisha's Playground.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
 <link rel="stylesheet" href="shared.css">
+<style>
+  /* On-screen keyboard — only for touch devices (phones/tablets) */
+  #osk {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 -4px 14px rgba(0,0,0,0.12);
+    z-index: 46;
+  }
+
+  #osk .row { display: grid; gap: 6px; }
+  #osk .letters { grid-template-columns: repeat(7, 1fr); }
+  #osk .numbers { grid-template-columns: repeat(11, 1fr); }
+
+  #osk button {
+    font-family: inherit;
+    font-weight: bold;
+    font-size: clamp(1.1rem, 5.5vw, 1.8rem);
+    padding: 0;
+    aspect-ratio: 1 / 1;
+    max-height: 54px;
+    border: none;
+    border-radius: 12px;
+    color: white;
+    background: hsl(var(--kh, 210), 75%, 42%);
+    box-shadow: 0 3px 0 hsl(var(--kh, 210), 75%, 26%);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  #osk button:active { transform: translateY(2px); box-shadow: 0 1px 0 hsl(var(--kh, 210), 75%, 26%); }
+  #osk .numbers button { font-size: clamp(0.95rem, 4vw, 1.4rem); border-radius: 10px; }
+
+  @media (hover: none) and (pointer: coarse) {
+    #osk { display: flex; }
+    /* lift the word bubble above the keyboard */
+    .word-label { top: 48%; }
+    .big-letter { top: 30%; }
+  }
+</style>
 </head>
 <body>
 
@@ -81,10 +126,7 @@
     }
   }
 
-  document.addEventListener('keydown', function (e) {
-    const key = LP.guardKey(e);
-    if (key === null) return;
-
+  function press(key) {
     const upper = key.length === 1 ? key.toUpperCase() : '';
     if (upper >= 'A' && upper <= 'Z') {
       handleLetter(upper);
@@ -98,7 +140,47 @@
       LP.spawnFly(LP.pick(LP.PARTY), spot.x, spot.y);
     }
     LP.bumpCounter();
+  }
+
+  document.addEventListener('keydown', function (e) {
+    const key = LP.guardKey(e);
+    if (key !== null) press(key);
   });
+
+  /* On-screen keyboard for touch devices (shown via CSS media query) */
+  const osk = document.createElement('div');
+  osk.id = 'osk';
+  osk.setAttribute('aria-label', 'Letter keyboard');
+
+  function keyButton(label, key, hue) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.style.setProperty('--kh', hue);
+    b.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      press(key);
+    });
+    return b;
+  }
+
+  const lettersRow = document.createElement('div');
+  lettersRow.className = 'row letters';
+  for (let i = 0; i < 26; i++) {
+    const ch = String.fromCharCode(65 + i);
+    lettersRow.appendChild(keyButton(ch, ch, Math.round(i / 26 * 330)));
+  }
+
+  const numbersRow = document.createElement('div');
+  numbersRow.className = 'row numbers';
+  for (let n = 0; n <= 9; n++) {
+    numbersRow.appendChild(keyButton(String(n), String(n), 200));
+  }
+  numbersRow.appendChild(keyButton('🎉', ' ', 330));
+
+  osk.appendChild(lettersRow);
+  osk.appendChild(numbersRow);
+  document.body.appendChild(osk);
 })();
 </script>
 </body>
