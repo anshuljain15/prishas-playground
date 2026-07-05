@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prisha's Playground 🎪 — Free Learning Games for Toddlers</title>
+<meta name="description" content="Five free, safe browser games for toddlers (ages 1–4): letters, balloons, music, painting and animals. No ads, no tracking, no downloads — made with love by two new parents.">
+<meta property="og:title" content="Prisha's Playground 🎪">
+<meta property="og:description" content="Free, safe learning games for toddlers — letters, balloons, music, painting & animals. No ads, no tracking, just press any key!">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#a855f7">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<link rel="stylesheet" href="shared.css">
+<style>
+  body { overflow-y: auto; }
+
+  #hub {
+    min-height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 24px 16px 40px;
+  }
+
+  #hubHeader {
+    display: flex; align-items: center; gap: 14px;
+    flex-wrap: wrap; justify-content: center;
+  }
+
+  #hub h1 {
+    font-size: clamp(2rem, 7vw, 4rem);
+    color: hsl(280, 70%, 40%);
+    text-shadow: 3px 3px 0 rgba(255,255,255,0.8);
+    animation: bounceTitle 2s ease-in-out infinite;
+    text-align: center;
+  }
+
+  @keyframes bounceTitle {
+    0%, 100% { transform: translateY(0) rotate(-1deg); }
+    50%      { transform: translateY(-10px) rotate(1deg); }
+  }
+
+  #greeting {
+    font-size: clamp(1.2rem, 4vw, 1.8rem);
+    font-weight: bold;
+    color: hsl(20, 85%, 38%);
+    background: rgba(255,255,255,0.75);
+    padding: 6px 22px;
+    border-radius: 999px;
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  #editNameBtn, #hubSoundBtn {
+    font-size: 1.2rem;
+    background: none; border: none; cursor: pointer;
+  }
+
+  #cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 22px;
+    width: min(1100px, 94vw);
+    margin-top: 10px;
+  }
+
+  .card {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 8px;
+    padding: 28px 14px;
+    border-radius: 28px;
+    text-decoration: none;
+    text-align: center;
+    box-shadow: 0 10px 0 rgba(0,0,0,0.12), 0 14px 26px rgba(0,0,0,0.15);
+    transition: transform 0.15s ease;
+    border: 5px solid rgba(255,255,255,0.7);
+  }
+
+  .card:hover, .card:focus-visible { transform: scale(1.05) rotate(-1.5deg); }
+  .card:active { transform: scale(0.97); }
+
+  .card .icon { font-size: clamp(3.5rem, 9vw, 5.5rem); line-height: 1; animation: iconBob 2.4s ease-in-out infinite; }
+  .card:nth-child(2) .icon { animation-delay: 0.3s; }
+  .card:nth-child(3) .icon { animation-delay: 0.6s; }
+  .card:nth-child(4) .icon { animation-delay: 0.9s; }
+  .card:nth-child(5) .icon { animation-delay: 1.2s; }
+
+  @keyframes iconBob {
+    0%, 100% { transform: translateY(0) rotate(-4deg); }
+    50%      { transform: translateY(-10px) rotate(4deg); }
+  }
+
+  .card .name { font-size: clamp(1.4rem, 4vw, 2rem); font-weight: bold; color: white; text-shadow: 2px 2px 0 rgba(0,0,0,0.25); }
+  .card .sub  { font-size: clamp(0.95rem, 2.5vw, 1.15rem); color: rgba(255,255,255,0.95); font-weight: bold; }
+
+  .c-letters  { background: linear-gradient(145deg, hsl(275, 75%, 58%), hsl(300, 70%, 50%)); }
+  .c-balloons { background: linear-gradient(145deg, hsl(350, 85%, 60%), hsl(15, 90%, 55%)); }
+  .c-piano    { background: linear-gradient(145deg, hsl(200, 85%, 50%), hsl(230, 75%, 55%)); }
+  .c-paint    { background: linear-gradient(145deg, hsl(140, 70%, 42%), hsl(170, 75%, 38%)); }
+  .c-animals  { background: linear-gradient(145deg, hsl(35, 95%, 50%), hsl(50, 95%, 45%)); }
+
+  .parent-tip {
+    font-size: 0.95rem;
+    color: hsl(280, 40%, 28%);
+    background: rgba(255,255,255,0.7);
+    padding: 8px 18px;
+    border-radius: 999px;
+  }
+
+  /* ---------- Name overlay ---------- */
+  #nameOverlay {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 24px;
+    background: linear-gradient(160deg, hsl(45, 100%, 85%), hsl(330, 90%, 88%), hsl(200, 90%, 85%));
+    z-index: 100;
+    text-align: center;
+    padding: 20px;
+  }
+
+  #nameOverlay .emoji-row { font-size: clamp(2rem, 6vw, 3.5rem); letter-spacing: 12px; }
+
+  #nameOverlay h2 {
+    font-size: clamp(2rem, 7vw, 4rem);
+    color: hsl(280, 70%, 40%);
+    text-shadow: 3px 3px 0 rgba(255,255,255,0.8);
+  }
+
+  #nameInput {
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-family: inherit;
+    padding: 14px 24px;
+    border: 4px solid hsl(280, 70%, 60%);
+    border-radius: 999px;
+    text-align: center;
+    outline: none;
+    width: min(400px, 85vw);
+    background: white;
+    color: hsl(280, 60%, 30%);
+  }
+
+  #nameInput:focus { border-color: hsl(330, 90%, 55%); box-shadow: 0 0 0 6px hsla(330, 90%, 55%, 0.25); }
+
+  #saveNameBtn {
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-family: inherit;
+    font-weight: bold;
+    padding: 16px 50px;
+    border: none; border-radius: 999px;
+    cursor: pointer; color: white;
+    background: linear-gradient(135deg, hsl(140, 75%, 32%), hsl(160, 80%, 27%));
+    box-shadow: 0 8px 0 hsl(150, 70%, 20%), 0 12px 20px rgba(0,0,0,0.2);
+  }
+
+  #saveNameBtn:active { transform: translateY(6px); box-shadow: 0 2px 0 hsl(150, 70%, 30%); }
+</style>
+</head>
+<body>
+
+<div id="hub">
+  <div id="hubHeader">
+    <h1>🎪 Prisha's Playground</h1>
+  </div>
+  <div id="greeting">
+    <span>⭐ <span id="greetName"></span></span>
+    <button id="editNameBtn" type="button" aria-label="Change name">✏️</button>
+    <button id="hubSoundBtn" type="button" aria-label="Sound on or off">🔊</button>
+  </div>
+
+  <div id="cards">
+    <a class="card c-letters" href="letters.html">
+      <span class="icon">🔤</span>
+      <span class="name">Letter Pops</span>
+      <span class="sub">Press keys, learn letters!</span>
+    </a>
+    <a class="card c-balloons" href="balloons.html">
+      <span class="icon">🎈</span>
+      <span class="name">Balloon Pop</span>
+      <span class="sub">Pop the balloons!</span>
+    </a>
+    <a class="card c-piano" href="piano.html">
+      <span class="icon">🎹</span>
+      <span class="name">Musical Keys</span>
+      <span class="sub">Make happy music!</span>
+    </a>
+    <a class="card c-paint" href="paint.html">
+      <span class="icon">🎨</span>
+      <span class="name">Finger Paint</span>
+      <span class="sub">Paint rainbows!</span>
+    </a>
+    <a class="card c-animals" href="animals.html">
+      <span class="icon">🦁</span>
+      <span class="name">Animal Parade</span>
+      <span class="sub">Meet the animals!</span>
+    </a>
+  </div>
+
+  <div class="parent-tip">💡 Parent tip: press <b>F11</b> for fullscreen so little fingers stay in the game</div>
+
+  <footer id="siteFooter">
+    <nav aria-label="Site links">
+      <a href="about.html">💛 About Us</a>
+      <a href="parents.html">🛡️ For Parents</a>
+      <a href="mailto:anshul.j5tcs@gmail.com">✉️ Contact</a>
+    </nav>
+    <p>Made with ❤️ by Anshul &amp; Priyanka for our little Prisha — and for your little one too.</p>
+    <p class="fineprint">No ads · No tracking · Nothing to install · Free forever</p>
+  </footer>
+</div>
+
+<div id="nameOverlay" class="hidden">
+  <div class="emoji-row">🎈 🍎 🦁 🚀 🌈</div>
+  <h2>What's your name?</h2>
+  <label for="nameInput" class="hidden">Your name</label>
+  <input id="nameInput" type="text" maxlength="20" placeholder="Type your name…" autocomplete="off">
+  <button id="saveNameBtn" type="button">▶ Let's Play!</button>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const overlay = document.getElementById('nameOverlay');
+  const nameInput = document.getElementById('nameInput');
+  const greetName = document.getElementById('greetName');
+  const soundBtn = document.getElementById('hubSoundBtn');
+
+  let soundOn = localStorage.getItem('lp_sound') !== 'off';
+  soundBtn.textContent = soundOn ? '🔊' : '🔇';
+  soundBtn.addEventListener('click', function () {
+    soundOn = !soundOn;
+    localStorage.setItem('lp_sound', soundOn ? 'on' : 'off');
+    soundBtn.textContent = soundOn ? '🔊' : '🔇';
+  });
+
+  function refreshGreeting() {
+    greetName.textContent = localStorage.getItem('lp_name') || 'Superstar';
+  }
+
+  function openOverlay() {
+    nameInput.value = localStorage.getItem('lp_name') || '';
+    overlay.classList.remove('hidden');
+    nameInput.focus();
+  }
+
+  function saveName() {
+    const name = nameInput.value.trim() || 'Superstar';
+    localStorage.setItem('lp_name', name);
+    overlay.classList.add('hidden');
+    refreshGreeting();
+    if (soundOn && 'speechSynthesis' in globalThis) {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance('Hello ' + name + '! Pick a game!');
+      u.rate = 0.85; u.pitch = 1.2;
+      speechSynthesis.speak(u);
+    }
+  }
+
+  document.getElementById('saveNameBtn').addEventListener('click', saveName);
+  nameInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); saveName(); }
+  });
+  document.getElementById('editNameBtn').addEventListener('click', openOverlay);
+
+  if (!localStorage.getItem('lp_name')) openOverlay();
+  refreshGreeting();
+})();
+</script>
+</body>
+</html>

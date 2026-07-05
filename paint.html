@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finger Paint 🎨 · Prisha's Playground</title>
+<meta name="description" content="Paint sparkly rainbows with a finger or mouse — a free toddler art game from Prisha's Playground.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<link rel="stylesheet" href="shared.css">
+<style>
+  #paint {
+    position: fixed; inset: 0;
+    touch-action: none;
+    cursor: crosshair;
+  }
+
+  #clearBtn {
+    position: fixed;
+    right: 20px; bottom: 20px;
+    font-size: clamp(2rem, 6vw, 3rem);
+    width: clamp(70px, 14vw, 100px);
+    height: clamp(70px, 14vw, 100px);
+    border-radius: 50%;
+    border: 5px solid hsl(200, 80%, 55%);
+    background: white;
+    cursor: pointer;
+    box-shadow: 0 6px 0 hsl(200, 60%, 45%), 0 10px 18px rgba(0,0,0,0.2);
+    z-index: 45;
+    transition: transform 0.1s;
+  }
+
+  #clearBtn:active { transform: translateY(5px); box-shadow: 0 1px 0 hsl(200, 60%, 45%); }
+
+  #flash {
+    position: fixed; inset: 0;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 44;
+  }
+
+  #flash.go { animation: flashClean 0.5s ease; }
+
+  @keyframes flashClean {
+    0% { opacity: 0; } 40% { opacity: 1; } 100% { opacity: 0; }
+  }
+
+  #hint {
+    position: fixed;
+    left: 50%; bottom: 24px;
+    transform: translateX(-50%);
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    font-weight: bold;
+    color: hsl(150, 60%, 22%);
+    background: rgba(255,255,255,0.8);
+    padding: 8px 22px;
+    border-radius: 999px;
+    pointer-events: none;
+    z-index: 8;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="paint"></canvas>
+<div id="flash"></div>
+<div id="hint">🖌️ Drag to paint — press keys for stickers!</div>
+<button id="clearBtn" type="button" aria-label="Clear the painting">🧽</button>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  LP.initPage({ counterEmoji: '🖌️', milestone: 25 });
+  LP.speak('Paint a rainbow, ' + LP.playerName + '!');
+
+  const canvas = document.getElementById('paint');
+  const ctx = canvas.getContext('2d');
+  const hint = document.getElementById('hint');
+
+  function sizeCanvas() {
+    // preserve the drawing across resizes
+    const old = document.createElement('canvas');
+    old.width = canvas.width; old.height = canvas.height;
+    if (canvas.width) old.getContext('2d').drawImage(canvas, 0, 0);
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+    if (old.width) ctx.drawImage(old, 0, 0);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }
+  sizeCanvas();
+  addEventListener('resize', sizeCanvas);
+
+  /* ---------- Rainbow brush ---------- */
+  const COLOR_BANDS = [
+    [15, 'Red'], [45, 'Orange'], [70, 'Yellow'], [160, 'Green'],
+    [250, 'Blue'], [300, 'Purple'], [345, 'Pink'], [360, 'Red']
+  ];
+
+  function colorName(h) {
+    for (const band of COLOR_BANDS) {
+      if (h < band[0]) return band[1];
+    }
+    return 'Red';
+  }
+
+  let hue = LP.rand(0, 360);
+  let drawing = false;
+  let lastX = 0, lastY = 0;
+  let lastColorSpoken = '';
+  let sparkleStep = 0;
+
+  function strokeTo(x, y) {
+    hue = (hue + 1.6) % 360;
+    ctx.strokeStyle = 'hsl(' + hue + ', 90%, 55%)';
+    ctx.lineWidth = 26;
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    lastX = x; lastY = y;
+
+    if (++sparkleStep % 14 === 0) LP.spawnFly('✨', x, y, 1.4);
+
+    const name = colorName(hue);
+    if (name !== lastColorSpoken) {
+      lastColorSpoken = name;
+      LP.speak(name + '!');
+    }
+  }
+
+  canvas.addEventListener('pointerdown', function (e) {
+    drawing = true;
+    lastX = e.clientX; lastY = e.clientY;
+    strokeTo(e.clientX + 0.1, e.clientY + 0.1); // dot on tap
+    hint.classList.add('hidden');
+    LP.bumpCounter();
+  });
+
+  canvas.addEventListener('pointermove', function (e) {
+    if (!drawing) return;
+    strokeTo(e.clientX, e.clientY);
+  });
+
+  addEventListener('pointerup', function () { drawing = false; });
+  addEventListener('pointercancel', function () { drawing = false; });
+
+  /* ---------- Keys stamp stickers ---------- */
+  document.addEventListener('keydown', function (e) {
+    const key = LP.guardKey(e);
+    if (key === null) return;
+
+    const x = LP.rand(innerWidth * 0.1, innerWidth * 0.9);
+    const y = LP.rand(innerHeight * 0.18, innerHeight * 0.85);
+    const angle = LP.rand(-0.35, 0.35);
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    if (key.length === 1 && /[a-z0-9]/i.test(key)) {
+      ctx.font = 'bold 110px "Comic Sans MS", sans-serif';
+      ctx.fillStyle = 'hsl(' + Math.floor(LP.rand(0, 360)) + ', 85%, 50%)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(key.toUpperCase(), 0, 0);
+      LP.speak(key.toUpperCase() + '!');
+    } else {
+      ctx.font = '90px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(LP.pick(LP.PARTY), 0, 0);
+    }
+    ctx.restore();
+    LP.bumpCounter();
+  });
+
+  /* ---------- Clear ---------- */
+  document.getElementById('clearBtn').addEventListener('click', function () {
+    const flash = document.getElementById('flash');
+    flash.classList.remove('go');
+    // restart the animation
+    requestAnimationFrame(function () { flash.classList.add('go'); });
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    LP.speak('All clean!', true);
+    this.blur();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oops! 🙈 · Prisha's Playground</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<link rel="stylesheet" href="shared.css">
+<style>
+  body {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 22px;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .monkey { font-size: clamp(5rem, 20vw, 9rem); animation: peek 2s ease-in-out infinite; }
+
+  @keyframes peek {
+    0%, 100% { transform: rotate(-6deg) translateY(0); }
+    50%      { transform: rotate(6deg) translateY(-12px); }
+  }
+
+  h1 { font-size: clamp(1.8rem, 6vw, 3rem); color: hsl(280, 70%, 38%); text-shadow: 2px 2px 0 rgba(255,255,255,0.8); }
+  p  { font-size: clamp(1.05rem, 3vw, 1.4rem); color: hsl(270, 30%, 28%); font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="monkey">🙈</div>
+<h1>Oops! This page wandered off…</h1>
+<p>Maybe it's playing hide and seek. Let's go back to the games!</p>
+<a class="back-home" id="homeLink" href="index.html">🎪 Back to Prisha's Playground</a>
+
+<script>
+// GitHub Pages serves this file for ANY missing path, including nested ones,
+// so point home at the site root rather than a relative index.html.
+(function () {
+  'use strict';
+  const seg = location.pathname.split('/')[1];
+  document.getElementById('homeLink').href =
+    location.hostname.endsWith('github.io') && seg ? '/' + seg + '/' : '/';
+})();
+</script>
+</body>
+</html>

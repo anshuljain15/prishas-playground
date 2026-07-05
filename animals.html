@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Animal Parade 🦁 · Prisha's Playground</title>
+<meta name="description" content="Tap the marching animals to hear their sounds — a free toddler game from Prisha's Playground.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<link rel="stylesheet" href="shared.css">
+<style>
+  body {
+    --h: 130; --h2: 190; /* meadow-y default */
+  }
+
+  #meadow { position: fixed; inset: 0; overflow: hidden; }
+
+  #ground {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 16vh;
+    background: linear-gradient(to top, hsl(110, 55%, 55%), hsl(110, 60%, 68%));
+    border-radius: 100% 100% 0 0 / 40px 40px 0 0;
+    z-index: 1;
+  }
+
+  .walker {
+    position: fixed;
+    left: 0; top: 0;
+    font-size: var(--size, 6rem);
+    cursor: pointer;
+    z-index: 10;
+    animation: walk var(--dur) linear forwards;
+    line-height: 1;
+    will-change: transform;
+  }
+
+  @keyframes walk {
+    from { transform: translateX(var(--fromX)); }
+    to   { transform: translateX(var(--toX)); }
+  }
+
+  .walker .bob {
+    display: inline-block;
+    animation: waddle 0.55s ease-in-out infinite alternate;
+    transform-origin: bottom center;
+  }
+
+  .walker.flip .bob .face { display: inline-block; transform: scaleX(-1); }
+
+  @keyframes waddle {
+    from { transform: translateY(0) rotate(-4deg); }
+    to   { transform: translateY(-8px) rotate(4deg); }
+  }
+
+  .walker.jumping .bob {
+    animation: jump 0.7s ease;
+  }
+
+  @keyframes jump {
+    0%   { transform: translateY(0) scale(1); }
+    30%  { transform: translateY(-70px) scale(1.2) rotate(-8deg); }
+    60%  { transform: translateY(-30px) scale(1.1) rotate(8deg); }
+    80%  { transform: translateY(4px) scaleY(0.85) scaleX(1.15); }
+    100% { transform: translateY(0) scale(1); }
+  }
+
+  .speech {
+    position: absolute;
+    top: -0.9em; left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.32em;
+    font-weight: bold;
+    font-family: "Comic Sans MS", "Segoe UI", system-ui, sans-serif;
+    color: hsl(20, 85%, 35%);
+    background: white;
+    border: 3px solid hsl(20, 85%, 55%);
+    padding: 4px 16px;
+    border-radius: 999px;
+    white-space: nowrap;
+    animation: bubblePop 1.6s ease forwards;
+    pointer-events: none;
+  }
+
+  @keyframes bubblePop {
+    0%   { transform: translateX(-50%) scale(0); opacity: 0; }
+    15%  { transform: translateX(-50%) scale(1.15); opacity: 1; }
+    25%  { transform: translateX(-50%) scale(1); }
+    80%  { opacity: 1; }
+    100% { transform: translateX(-50%) scale(1.1); opacity: 0; }
+  }
+
+  #hint {
+    position: fixed;
+    left: 50%; bottom: 24px;
+    transform: translateX(-50%);
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    font-weight: bold;
+    color: hsl(20, 70%, 28%);
+    background: rgba(255,255,255,0.85);
+    padding: 8px 22px;
+    border-radius: 999px;
+    pointer-events: none;
+    z-index: 8;
+  }
+</style>
+</head>
+<body>
+
+<div id="meadow"><div id="ground"></div></div>
+<div id="hint">🐾 Tap an animal to hear it!</div>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const ANIMALS = [
+    ['🐶', 'Dog', 'Woof woof!'],
+    ['🐱', 'Cat', 'Meow meow!'],
+    ['🐮', 'Cow', 'Moo moo!'],
+    ['🦆', 'Duck', 'Quack quack!'],
+    ['🦁', 'Lion', 'Roar!'],
+    ['🐑', 'Sheep', 'Baa baa!'],
+    ['🐴', 'Horse', 'Neigh neigh!'],
+    ['🐷', 'Pig', 'Oink oink!'],
+    ['🐸', 'Frog', 'Ribbit ribbit!'],
+    ['🐔', 'Chicken', 'Cluck cluck!'],
+    ['🐵', 'Monkey', 'Ooh ooh ah ah!'],
+    ['🐘', 'Elephant', 'Pawooo!']
+  ];
+
+  const MAX_WALKERS = 6;
+  const meadow = document.getElementById('meadow');
+
+  LP.initPage({ counterEmoji: '🐾', milestone: 10 });
+  LP.speak('Tap the animals, ' + LP.playerName + '!');
+
+  function spawnWalker(midway) {
+    if (meadow.querySelectorAll('.walker').length >= MAX_WALKERS) return;
+    const a = LP.pick(ANIMALS);
+    const w = document.createElement('div');
+    w.className = 'walker';
+    w.dataset.name = a[1];
+    w.dataset.sound = a[2];
+    const dur = LP.rand(14, 26);
+    w.style.setProperty('--size', LP.rand(4.5, 7.5) + 'rem');
+    w.style.setProperty('--dur', dur + 's');
+    w.style.top = LP.rand(22, 72) + 'vh';
+    // first animals appear already walking mid-screen, not off-stage
+    if (midway) w.style.animationDelay = -LP.rand(0.15, 0.7) * dur + 's';
+
+    const goingRight = Math.random() < 0.5;
+    const off = 260;
+    if (goingRight) {
+      w.style.setProperty('--fromX', -off + 'px');
+      w.style.setProperty('--toX', 'calc(100vw + ' + off + 'px)');
+      w.classList.add('flip');
+    } else {
+      w.style.setProperty('--fromX', 'calc(100vw + ' + off + 'px)');
+      w.style.setProperty('--toX', -off + 'px');
+    }
+
+    const bob = document.createElement('span');
+    bob.className = 'bob';
+    const face = document.createElement('span');
+    face.className = 'face';
+    face.textContent = a[0];
+    bob.appendChild(face);
+    w.appendChild(bob);
+
+    w.addEventListener('pointerdown', function () { greet(w); });
+    w.addEventListener('animationend', function (e) {
+      if (e.target === w) { w.remove(); spawnWalker(); }
+    });
+
+    meadow.appendChild(w);
+  }
+
+  function greet(w) {
+    if (w.classList.contains('jumping')) return;
+    w.classList.add('jumping');
+    setTimeout(function () { w.classList.remove('jumping'); }, 720);
+
+    const old = w.querySelector('.speech');
+    if (old) old.remove();
+    const bubble = document.createElement('span');
+    bubble.className = 'speech';
+    bubble.textContent = w.dataset.sound;
+    w.appendChild(bubble);
+
+    LP.showWordLabel(w.dataset.name);
+    LP.speak(w.dataset.name + '! The ' + w.dataset.name.toLowerCase() +
+             ' says ' + w.dataset.sound);
+
+    const rect = w.getBoundingClientRect();
+    LP.burstAt(rect.left + rect.width / 2, rect.top, ['💖', '⭐']);
+    LP.bumpCounter();
+  }
+
+  // Keyboard: matching first letter jumps that animal, otherwise a random one
+  document.addEventListener('keydown', function (e) {
+    const key = LP.guardKey(e);
+    if (key === null) return;
+    const walkers = Array.from(meadow.querySelectorAll('.walker'));
+    if (!walkers.length) return;
+    let target = null;
+    if (key.length === 1) {
+      const matches = walkers.filter(function (w) {
+        return w.dataset.name[0].toLowerCase() === key.toLowerCase();
+      });
+      if (matches.length) target = LP.pick(matches);
+    }
+    greet(target || LP.pick(walkers));
+  });
+
+  for (let i = 0; i < 5; i++) setTimeout(function () { spawnWalker(true); }, i * 200);
+  setInterval(spawnWalker, 3000);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balloon Pop 🎈 · Prisha's Playground</title>
+<meta name="description" content="Pop colorful floating balloons and learn colors — a free toddler game from Prisha's Playground.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<link rel="stylesheet" href="shared.css">
+<style>
+  #sky { position: fixed; inset: 0; overflow: hidden; }
+
+  .balloon {
+    position: fixed;
+    width: clamp(70px, 12vw, 110px);
+    height: clamp(88px, 15vw, 138px);
+    cursor: pointer;
+    animation: rise var(--dur) linear forwards;
+    will-change: transform;
+    z-index: 10;
+  }
+
+  @keyframes rise {
+    from { transform: translateY(0); }
+    to   { transform: translateY(calc(-100vh - 320px)); }
+  }
+
+  .balloon .body {
+    width: 100%; height: 100%;
+    border-radius: 50% 50% 48% 52% / 55% 55% 45% 45%;
+    background: radial-gradient(circle at 35% 28%,
+      hsl(var(--bh), 95%, 82%),
+      hsl(var(--bh), 88%, 58%) 60%,
+      hsl(var(--bh), 80%, 45%));
+    box-shadow: inset -8px -10px 18px rgba(0,0,0,0.12);
+    animation: sway var(--sway) ease-in-out infinite alternate;
+    position: relative;
+  }
+
+  .balloon .body::before {
+    content: '';
+    position: absolute;
+    bottom: -10px; left: 50%;
+    transform: translateX(-50%);
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-top: 12px solid hsl(var(--bh), 80%, 45%);
+  }
+
+  .balloon .body::after {
+    content: '';
+    position: absolute;
+    bottom: -70px; left: 50%;
+    width: 3px; height: 62px;
+    background: rgba(120, 90, 60, 0.55);
+    border-radius: 3px;
+  }
+
+  @keyframes sway {
+    from { transform: translateX(-16px) rotate(-4deg); }
+    to   { transform: translateX(16px) rotate(4deg); }
+  }
+
+  .balloon.popping { pointer-events: none; animation-play-state: paused; }
+  .balloon.popping .body {
+    animation: balloonPop 0.3s ease forwards;
+  }
+
+  @keyframes balloonPop {
+    0%   { transform: scale(1); opacity: 1; }
+    40%  { transform: scale(1.35); opacity: 1; }
+    100% { transform: scale(0.1); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="sky"></div>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const COLORS = [
+    ['Red', 0], ['Orange', 30], ['Yellow', 52], ['Green', 130],
+    ['Blue', 210], ['Purple', 275], ['Pink', 330]
+  ];
+
+  const MAX_BALLOONS = 9;
+  const sky = document.getElementById('sky');
+  let pops = 0;
+
+  LP.initPage({ counterEmoji: '🎈', milestone: 10 });
+  LP.speak('Pop the balloons, ' + LP.playerName + '!');
+
+  function spawnBalloon() {
+    if (sky.querySelectorAll('.balloon:not(.popping)').length >= MAX_BALLOONS) return;
+    const color = LP.pick(COLORS);
+    const b = document.createElement('div');
+    b.className = 'balloon';
+    b.dataset.color = color[0];
+    b.style.setProperty('--bh', color[1]);
+    b.style.setProperty('--dur', LP.rand(7, 14) + 's');
+    b.style.setProperty('--sway', LP.rand(1.6, 2.8) + 's');
+    b.style.left = LP.rand(2, 88) + 'vw';
+    b.style.top = '100vh';
+
+    const body = document.createElement('div');
+    body.className = 'body';
+    b.appendChild(body);
+
+    b.addEventListener('pointerdown', function () { pop(b); });
+    b.addEventListener('animationend', function (e) {
+      if (e.target === b) b.remove(); // floated off the top
+    });
+
+    sky.appendChild(b);
+  }
+
+  function pop(b) {
+    if (b.classList.contains('popping')) return;
+    b.classList.add('popping');
+    const rect = b.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    LP.burstAt(cx, cy, ['🎉', '✨', LP.pick(LP.PARTY)]);
+    LP.speak(b.dataset.color + '!');
+    setTimeout(function () { b.remove(); }, 320);
+
+    pops++;
+    LP.bumpCounter();
+    if (pops % 5 === 0) LP.showWordLabel(pops + ' balloons!');
+  }
+
+  // Any key pops a random balloon — keyboard mashers welcome
+  document.addEventListener('keydown', function (e) {
+    const key = LP.guardKey(e);
+    if (key === null) return;
+    const balloons = sky.querySelectorAll('.balloon:not(.popping)');
+    if (balloons.length) pop(LP.pick(Array.from(balloons)));
+  });
+
+  // Keep the sky populated
+  for (let i = 0; i < 5; i++) setTimeout(spawnBalloon, i * 500);
+  setInterval(spawnBalloon, 900);
+})();
+</script>
+</body>
+</html>

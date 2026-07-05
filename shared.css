@@ -1,0 +1,295 @@
+/* Shared styles for all Letter Pops playground pages */
+
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: "Comic Sans MS", "Segoe UI", system-ui, sans-serif;
+}
+
+body {
+  --h: 200;
+  --h2: 280;
+  background: linear-gradient(135deg, hsl(var(--h), 80%, 88%), hsl(var(--h2), 70%, 90%));
+  transition: background 0.6s ease;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- Top bar ---------- */
+#topBar {
+  position: fixed; top: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  z-index: 50;
+  font-weight: bold;
+}
+
+#homeBtn {
+  font-size: clamp(1.4rem, 4vw, 1.9rem);
+  text-decoration: none;
+  background: hsl(140, 70%, 90%);
+  border: 3px solid hsl(140, 60%, 55%);
+  border-radius: 50%;
+  width: 54px; height: 54px;
+  display: flex; align-items: center; justify-content: center;
+  flex: none;
+}
+
+#playerName {
+  font-size: clamp(1rem, 3vw, 1.5rem);
+  color: hsl(280, 70%, 38%);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+#counter {
+  font-size: clamp(1rem, 3vw, 1.5rem);
+  color: hsl(20, 90%, 40%);
+  background: hsl(45, 100%, 88%);
+  padding: 4px 18px;
+  border-radius: 999px;
+  border: 3px solid hsl(40, 90%, 60%);
+  min-width: 90px;
+  text-align: center;
+  transition: transform 0.1s;
+}
+
+#counter.bump { transform: scale(1.25); }
+
+#soundBtn {
+  font-size: clamp(1.4rem, 4vw, 1.9rem);
+  background: hsl(200, 90%, 90%);
+  border: 3px solid hsl(200, 80%, 60%);
+  border-radius: 50%;
+  width: 54px; height: 54px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex: none;
+}
+
+/* ---------- Effects layer (confetti / floating emojis) ---------- */
+#fxLayer {
+  position: fixed; inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 40;
+}
+
+.fly {
+  position: fixed;
+  font-size: var(--size, 4rem);
+  z-index: 5;
+  cursor: pointer;
+  pointer-events: auto;
+  animation-fill-mode: forwards;
+  will-change: transform, opacity;
+  line-height: 1;
+}
+
+@keyframes floatUp {
+  0%   { transform: translate(0, 0) scale(0) rotate(0deg); opacity: 0; }
+  10%  { transform: translate(calc(var(--dx) * 0.1), calc(var(--dy) * 0.1)) scale(1.2) rotate(8deg); opacity: 1; }
+  20%  { transform: translate(calc(var(--dx) * 0.2), calc(var(--dy) * 0.2)) scale(1) rotate(-6deg); }
+  85%  { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.9) rotate(12deg); opacity: 0; }
+}
+
+@keyframes driftSpin {
+  0%   { transform: translate(0, 0) scale(0) rotate(0deg); opacity: 0; }
+  12%  { transform: translate(calc(var(--dx) * 0.12), calc(var(--dy) * 0.12)) scale(1.15) rotate(60deg); opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.8) rotate(360deg); opacity: 0; }
+}
+
+@keyframes wobbleFloat {
+  0%   { transform: translate(0, 0) scale(0); opacity: 0; }
+  10%  { transform: translate(calc(var(--dx) * 0.1), calc(var(--dy) * 0.1)) scale(1.25); opacity: 1; }
+  30%  { transform: translate(calc(var(--dx) * 0.3), calc(var(--dy) * 0.35)) scale(1) rotate(-14deg); }
+  50%  { transform: translate(calc(var(--dx) * 0.5), calc(var(--dy) * 0.5)) rotate(14deg); }
+  70%  { transform: translate(calc(var(--dx) * 0.7), calc(var(--dy) * 0.75)) rotate(-10deg); }
+  85%  { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.85) rotate(0deg); opacity: 0; }
+}
+
+.fly.popped { animation: popOut 0.35s ease forwards !important; }
+
+@keyframes popOut {
+  0%   { transform: scale(1); opacity: 1; }
+  50%  { transform: scale(1.6) rotate(15deg); opacity: 1; }
+  100% { transform: scale(0) rotate(30deg); opacity: 0; }
+}
+
+/* ---------- Big letter + word label ---------- */
+.big-letter {
+  position: fixed;
+  left: 50%; top: 45%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(8rem, 30vw, 18rem);
+  font-weight: bold;
+  text-shadow: 5px 5px 0 rgba(255,255,255,0.85), 10px 10px 24px rgba(0,0,0,0.18);
+  pointer-events: none;
+  z-index: 45;
+  animation: letterPop 1.6s ease forwards;
+  line-height: 1;
+}
+
+.big-letter small { font-size: 0.55em; vertical-align: baseline; margin-left: 0.08em; }
+
+@keyframes letterPop {
+  0%   { transform: translate(-50%, -50%) scale(0) rotate(-15deg); opacity: 0; }
+  18%  { transform: translate(-50%, -50%) scale(1.15) rotate(4deg); opacity: 1; }
+  28%  { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  75%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.3); opacity: 0; }
+}
+
+.word-label {
+  position: fixed;
+  left: 50%; top: 72%;
+  transform: translateX(-50%);
+  font-size: clamp(2rem, 7vw, 3.6rem);
+  font-weight: bold;
+  color: white;
+  background: hsl(280, 70%, 45%);
+  padding: 8px 34px;
+  border-radius: 999px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+  pointer-events: none;
+  z-index: 45;
+  animation: labelPop 1.8s ease forwards;
+  white-space: nowrap;
+}
+
+@keyframes labelPop {
+  0%   { transform: translateX(-50%) scale(0); opacity: 0; }
+  15%  { transform: translateX(-50%) scale(1.1); opacity: 1; }
+  25%  { transform: translateX(-50%) scale(1); }
+  80%  { opacity: 1; }
+  100% { transform: translateX(-50%) scale(1.1); opacity: 0; }
+}
+
+/* ---------- Celebration ---------- */
+.praise {
+  position: fixed;
+  left: 50%; top: 30%;
+  transform: translateX(-50%);
+  font-size: clamp(2rem, 7vw, 4rem);
+  font-weight: bold;
+  color: hsl(45, 100%, 50%);
+  -webkit-text-stroke: 2px hsl(20, 90%, 40%);
+  text-shadow: 4px 4px 0 rgba(255,255,255,0.9);
+  z-index: 60;
+  pointer-events: none;
+  animation: praisePop 2.8s ease forwards;
+  white-space: nowrap;
+}
+
+/* ---------- Site footer (hub + info pages) ---------- */
+#siteFooter {
+  margin-top: 18px;
+  text-align: center;
+  display: flex; flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 16px 6px;
+  width: 100%;
+}
+
+#siteFooter nav {
+  display: flex; flex-wrap: wrap;
+  gap: 12px 26px;
+  justify-content: center;
+}
+
+#siteFooter nav a {
+  font-weight: bold;
+  font-size: 1.05rem;
+  color: hsl(280, 60%, 32%);
+  text-decoration: none;
+  background: rgba(255,255,255,0.72);
+  padding: 8px 20px;
+  border-radius: 999px;
+  transition: transform 0.12s;
+}
+
+#siteFooter nav a:hover { transform: scale(1.07); }
+
+#siteFooter p {
+  font-size: 0.98rem;
+  color: hsl(280, 35%, 28%);
+  font-weight: bold;
+}
+
+#siteFooter .fineprint {
+  font-size: 0.85rem;
+  color: hsl(280, 25%, 35%);
+  font-weight: normal;
+}
+
+/* ---------- Info pages (About / For Parents) ---------- */
+.info-wrap {
+  min-height: 100%;
+  overflow-y: auto;
+  display: flex; flex-direction: column;
+  align-items: center;
+  padding: 28px 16px 40px;
+  gap: 20px;
+}
+
+.info-card {
+  background: rgba(255,255,255,0.9);
+  border-radius: 28px;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.12);
+  padding: clamp(20px, 5vw, 44px);
+  width: min(780px, 94vw);
+  color: hsl(270, 25%, 22%);
+  line-height: 1.65;
+  font-size: 1.05rem;
+}
+
+.info-card h1 {
+  font-size: clamp(1.8rem, 6vw, 2.8rem);
+  color: hsl(280, 70%, 38%);
+  margin-bottom: 14px;
+  line-height: 1.2;
+}
+
+.info-card h2 {
+  font-size: clamp(1.2rem, 4vw, 1.6rem);
+  color: hsl(20, 85%, 35%);
+  margin: 26px 0 8px;
+}
+
+.info-card p { margin: 10px 0; }
+.info-card ul { margin: 10px 0 10px 26px; }
+.info-card li { margin: 6px 0; }
+.info-card a { color: hsl(280, 70%, 40%); font-weight: bold; }
+
+.back-home {
+  display: inline-block;
+  font-weight: bold;
+  font-size: 1.15rem;
+  color: white;
+  background: linear-gradient(135deg, hsl(140, 75%, 30%), hsl(160, 80%, 26%));
+  text-decoration: none;
+  padding: 14px 34px;
+  border-radius: 999px;
+  box-shadow: 0 6px 0 hsl(150, 70%, 18%), 0 10px 16px rgba(0,0,0,0.18);
+  transition: transform 0.12s;
+}
+
+.back-home:hover { transform: scale(1.05); }
+.back-home:active { transform: translateY(4px); box-shadow: 0 2px 0 hsl(150, 70%, 18%); }
+
+@keyframes praisePop {
+  0%   { transform: translateX(-50%) scale(0) rotate(-10deg); opacity: 0; }
+  12%  { transform: translateX(-50%) scale(1.2) rotate(3deg); opacity: 1; }
+  22%  { transform: translateX(-50%) scale(1) rotate(0); }
+  80%  { opacity: 1; transform: translateX(-50%) scale(1.05); }
+  100% { opacity: 0; transform: translateX(-50%) scale(1.3); }
+}

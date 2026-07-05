@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Letter Pops 🔤 · Prisha's Playground</title>
+<meta name="description" content="Press any key and watch letters burst into emojis — a free toddler alphabet game from Prisha's Playground.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const LETTERS = {
+    A: [['✈️','Aeroplane'],['🍎','Apple'],['🐜','Ant'],['🥑','Avocado'],['🐊','Alligator']],
+    B: [['🍌','Banana'],['🐻','Bear'],['🎈','Balloon'],['🦋','Butterfly'],['⚽','Ball']],
+    C: [['🐱','Cat'],['🚗','Car'],['🎂','Cake'],['🐮','Cow'],['🥕','Carrot']],
+    D: [['🐶','Dog'],['🦆','Duck'],['🦕','Dinosaur'],['🥁','Drum'],['🍩','Donut']],
+    E: [['🐘','Elephant'],['🥚','Egg'],['🦅','Eagle'],['👂','Ear'],['🌍','Earth']],
+    F: [['🐸','Frog'],['🐟','Fish'],['🌸','Flower'],['🦊','Fox'],['🔥','Fire']],
+    G: [['🍇','Grapes'],['🦒','Giraffe'],['🎸','Guitar'],['🐐','Goat'],['🎁','Gift']],
+    H: [['🏠','House'],['🐴','Horse'],['🎩','Hat'],['❤️','Heart'],['🚁','Helicopter']],
+    I: [['🍦','Ice cream'],['🏝️','Island'],['🧊','Ice'],['🦎','Iguana'],['🪪','ID card']],
+    J: [['🤹','Juggler'],['🧃','Juice'],['✨','Jewel'],['🃏','Joker'],['🪼','Jellyfish']],
+    K: [['🪁','Kite'],['🔑','Key'],['🐨','Koala'],['👑','King'],['🦘','Kangaroo']],
+    L: [['🦁','Lion'],['🍋','Lemon'],['🍃','Leaf'],['💡','Light'],['🐆','Leopard']],
+    M: [['🐵','Monkey'],['🌙','Moon'],['🥛','Milk'],['🍄','Mushroom'],['🐭','Mouse']],
+    N: [['🥜','Nut'],['📰','Newspaper'],['🌃','Night'],['👃','Nose'],['🪺','Nest']],
+    O: [['🐙','Octopus'],['🍊','Orange'],['🦉','Owl'],['🌊','Ocean'],['🫒','Olive']],
+    P: [['🐼','Panda'],['🍕','Pizza'],['🐧','Penguin'],['🥞','Pancake'],['🦜','Parrot']],
+    Q: [['👸','Queen'],['❓','Question'],['🪶','Quill'],['🦆','Quack'],['🧵','Quilt']],
+    R: [['🌈','Rainbow'],['🚀','Rocket'],['🐰','Rabbit'],['🌹','Rose'],['🤖','Robot']],
+    S: [['☀️','Sun'],['⭐','Star'],['🐍','Snake'],['🍓','Strawberry'],['🧦','Socks']],
+    T: [['🐯','Tiger'],['🚂','Train'],['🌳','Tree'],['🐢','Turtle'],['🍅','Tomato']],
+    U: [['☂️','Umbrella'],['🦄','Unicorn'],['🛸','UFO'],['⬆️','Up'],['🌌','Universe']],
+    V: [['🌋','Volcano'],['🎻','Violin'],['🚐','Van'],['🧛','Vampire'],['🥦','Vegetable']],
+    W: [['🐋','Whale'],['🍉','Watermelon'],['🐺','Wolf'],['⌚','Watch'],['🌊','Wave']],
+    X: [['🎄','Xmas tree'],['🩻','X-ray'],['🎹','Xylophone'],['❌','X mark'],['🛶','Xebec']],
+    Y: [['💛','Yellow heart'],['🧶','Yarn'],['🥱','Yawn'],['🪀','Yo-yo'],['🍠','Yam']],
+    Z: [['🦓','Zebra'],['🤐','Zipper'],['⚡','Zap'],['0️⃣','Zero'],['💤','Zzz']]
+  };
+
+  const NUMBER_EMOJIS = ['🎈','⭐','🍎','🐤','🌸','🍪','🐠','🦋','🍓','🎀'];
+  const NUMBER_WORDS = ['Zero','One','Two','Three','Four','Five','Six','Seven','Eight','Nine'];
+
+  LP.initPage({ counterEmoji: '🎯', milestone: 25 });
+  LP.speak('Press any key, ' + LP.playerName + '!');
+
+  function handleLetter(letter) {
+    const entries = LETTERS[letter];
+    const featured = LP.pick(entries);
+    LP.showBigLetter(letter);
+    LP.showWordLabel(featured[1]);
+    const spot = LP.randomSpot();
+    const others = entries.filter(function (en) { return en !== featured; });
+    LP.burstAt(spot.x, spot.y,
+      [featured[0]].concat(others.map(function (en) { return en[0]; })), true);
+    LP.speak(letter + '! ' + featured[1] + '!');
+  }
+
+  function handleNumber(n) {
+    LP.showBigLetter(String(n));
+    LP.showWordLabel(NUMBER_WORDS[n]);
+    LP.speak(NUMBER_WORDS[n] + '!');
+    if (n === 0) {
+      LP.partyBurst(1);
+      return;
+    }
+    const emoji = NUMBER_EMOJIS[n];
+    for (let i = 0; i < n; i++) {
+      setTimeout(function () {
+        LP.spawnFly(emoji,
+          LP.rand(innerWidth * 0.1, innerWidth * 0.9),
+          LP.rand(innerHeight * 0.25, innerHeight * 0.8),
+          LP.rand(3.5, 5));
+      }, i * 120);
+    }
+  }
+
+  document.addEventListener('keydown', function (e) {
+    const key = LP.guardKey(e);
+    if (key === null) return;
+
+    const upper = key.length === 1 ? key.toUpperCase() : '';
+    if (upper >= 'A' && upper <= 'Z') {
+      handleLetter(upper);
+    } else if (key >= '0' && key <= '9') {
+      handleNumber(Number.parseInt(key, 10));
+    } else if (key === ' ') {
+      LP.partyBurst(3);
+      LP.speak('Party!');
+    } else {
+      const spot = LP.randomSpot();
+      LP.spawnFly(LP.pick(LP.PARTY), spot.x, spot.y);
+    }
+    LP.bumpCounter();
+  });
+})();
+</script>
+</body>
+</html>
