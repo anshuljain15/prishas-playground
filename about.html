@@ -6,6 +6,13 @@
 <title>About Us 💛 · Prisha's Playground</title>
 <meta name="description" content="The story behind Prisha's Playground — free toddler learning games made by two new parents for their daughter Prisha.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<script>
+(function () { 'use strict';
+  let t = localStorage.getItem('lp_theme');
+  if (!t && matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+  if (t === 'dark') document.documentElement.dataset.theme = 'dark';
+})();
+</script>
 <link rel="stylesheet" href="shared.css">
 <style>
   /* unlock scrolling on both html and body (iOS WebKit requirement) */

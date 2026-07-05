@@ -6,11 +6,59 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ---------- Theme variables (day default, night overrides) ---------- */
+html {
+  --bg-s1: 80%; --bg-l1: 88%;
+  --bg-s2: 70%; --bg-l2: 90%;
+  --surface: rgba(255, 255, 255, 0.88);      /* top bar, OSK */
+  --surface-soft: rgba(255, 255, 255, 0.75); /* pills, hints, footer links */
+  --card-bg: rgba(255, 255, 255, 0.9);       /* info cards */
+  --ink: hsl(270, 25%, 22%);                 /* body text */
+  --ink-strong: hsl(280, 70%, 38%);          /* headings, links, name */
+  --ink-accent: hsl(20, 85%, 35%);           /* sub-headings */
+}
+
+html[data-theme="dark"] {
+  --bg-s1: 45%; --bg-l1: 13%;
+  --bg-s2: 50%; --bg-l2: 17%;
+  --surface: rgba(26, 20, 50, 0.9);
+  --surface-soft: rgba(40, 32, 74, 0.82);
+  --card-bg: rgba(32, 26, 60, 0.94);
+  --ink: hsl(270, 40%, 90%);
+  --ink-strong: hsl(280, 90%, 80%);
+  --ink-accent: hsl(35, 95%, 70%);
+}
+
 html, body {
   width: 100%; height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
   font-family: "Comic Sans MS", "Segoe UI", system-ui, sans-serif;
+}
+
+/* twinkly starfield, night mode only */
+html[data-theme="dark"] body::before {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image:
+    radial-gradient(2px 2px at 12% 22%, rgba(255,255,255,0.9), transparent),
+    radial-gradient(2px 2px at 28% 64%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(3px 3px at 41% 12%, rgba(255,255,240,0.8), transparent),
+    radial-gradient(2px 2px at 57% 44%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(2px 2px at 66% 78%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(3px 3px at 74% 18%, rgba(255,255,240,0.85), transparent),
+    radial-gradient(2px 2px at 86% 56%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(2px 2px at 93% 30%, rgba(255,255,255,0.8), transparent),
+    radial-gradient(2px 2px at 8% 84%, rgba(255,255,255,0.55), transparent),
+    radial-gradient(2px 2px at 48% 90%, rgba(255,255,255,0.65), transparent);
+  animation: twinkle 3.2s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+  from { opacity: 0.55; }
+  to   { opacity: 1; }
 }
 
 /* no 300ms delay / accidental double-tap zoom on anything tappable */
@@ -21,7 +69,9 @@ button, a, .fly, .balloon, .walker, .card {
 body {
   --h: 200;
   --h2: 280;
-  background: linear-gradient(135deg, hsl(var(--h), 80%, 88%), hsl(var(--h2), 70%, 90%));
+  background: linear-gradient(135deg,
+    hsl(var(--h), var(--bg-s1), var(--bg-l1)),
+    hsl(var(--h2), var(--bg-s2), var(--bg-l2)));
   transition: background 0.6s ease;
 }
 
@@ -33,7 +83,7 @@ body {
   display: flex; align-items: center; justify-content: space-between;
   gap: 10px;
   padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--surface);
   backdrop-filter: blur(6px);
   box-shadow: 0 4px 14px rgba(0,0,0,0.12);
   z-index: 50;
@@ -53,7 +103,7 @@ body {
 
 #playerName {
   font-size: clamp(1rem, 3vw, 1.5rem);
-  color: hsl(280, 70%, 38%);
+  color: var(--ink-strong);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
@@ -71,7 +121,7 @@ body {
 
 #counter.bump { transform: scale(1.25); }
 
-#soundBtn {
+#soundBtn, #themeBtn {
   font-size: clamp(1.4rem, 4vw, 1.9rem);
   background: hsl(200, 90%, 90%);
   border: 3px solid hsl(200, 80%, 60%);
@@ -80,6 +130,11 @@ body {
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   flex: none;
+}
+
+#themeBtn {
+  background: hsl(255, 60%, 92%);
+  border-color: hsl(255, 60%, 62%);
 }
 
 /* ---------- Effects layer (confetti / floating emojis) ---------- */
@@ -219,9 +274,9 @@ body {
 #siteFooter nav a {
   font-weight: bold;
   font-size: 1.05rem;
-  color: hsl(280, 60%, 32%);
+  color: var(--ink-strong);
   text-decoration: none;
-  background: rgba(255,255,255,0.72);
+  background: var(--surface-soft);
   padding: 8px 20px;
   border-radius: 999px;
   transition: transform 0.12s;
@@ -231,13 +286,14 @@ body {
 
 #siteFooter p {
   font-size: 0.98rem;
-  color: hsl(280, 35%, 28%);
+  color: var(--ink);
   font-weight: bold;
 }
 
 #siteFooter .fineprint {
   font-size: 0.85rem;
-  color: hsl(280, 25%, 35%);
+  color: var(--ink);
+  opacity: 0.8;
   font-weight: normal;
 }
 
@@ -252,33 +308,33 @@ body {
 }
 
 .info-card {
-  background: rgba(255,255,255,0.9);
+  background: var(--card-bg);
   border-radius: 28px;
   box-shadow: 0 10px 26px rgba(0,0,0,0.12);
   padding: clamp(20px, 5vw, 44px);
   width: min(780px, 94vw);
-  color: hsl(270, 25%, 22%);
+  color: var(--ink);
   line-height: 1.65;
   font-size: 1.05rem;
 }
 
 .info-card h1 {
   font-size: clamp(1.8rem, 6vw, 2.8rem);
-  color: hsl(280, 70%, 38%);
+  color: var(--ink-strong);
   margin-bottom: 14px;
   line-height: 1.2;
 }
 
 .info-card h2 {
   font-size: clamp(1.2rem, 4vw, 1.6rem);
-  color: hsl(20, 85%, 35%);
+  color: var(--ink-accent);
   margin: 26px 0 8px;
 }
 
 .info-card p { margin: 10px 0; }
 .info-card ul { margin: 10px 0 10px 26px; }
 .info-card li { margin: 6px 0; }
-.info-card a { color: hsl(280, 70%, 40%); font-weight: bold; }
+.info-card a { color: var(--ink-strong); font-weight: bold; }
 
 .back-home {
   display: inline-block;

@@ -53,8 +53,24 @@ const LP = (function () {
       '<span id="playerName">⭐ ' + escapeHtml(playerName) + '</span>' +
       (opts.showCounter === false ? '<span></span>'
         : '<span id="counter">' + counterEmoji + ' 0</span>') +
+      '<button id="themeBtn" type="button" aria-label="Day or night mode">🌙</button>' +
       '<button id="soundBtn" type="button" aria-label="Sound on or off">🔊</button>';
     document.body.prepend(bar);
+
+    const themeBtn = document.getElementById('themeBtn');
+    function paintThemeBtn() {
+      themeBtn.textContent =
+        document.documentElement.dataset.theme === 'dark' ? '☀️' : '🌙';
+    }
+    paintThemeBtn();
+    themeBtn.addEventListener('click', function () {
+      const dark = document.documentElement.dataset.theme === 'dark';
+      if (dark) delete document.documentElement.dataset.theme;
+      else document.documentElement.dataset.theme = 'dark';
+      localStorage.setItem('lp_theme', dark ? 'light' : 'dark');
+      paintThemeBtn();
+      themeBtn.blur();
+    });
 
     fxLayer = document.createElement('div');
     fxLayer.id = 'fxLayer';

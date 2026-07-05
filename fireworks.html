@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fireworks Night 🎆 · Prisha's Playground</title>
+<meta name="description" content="Tap the night sky to launch sparkly fireworks — a free toddler game from Prisha's Playground.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<script>
+(function () { 'use strict';
+  let t = localStorage.getItem('lp_theme');
+  if (!t && matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+  if (t === 'dark') document.documentElement.dataset.theme = 'dark';
+})();
+</script>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* always night here, whatever the theme */
+  body {
+    --bg-s1: 55%; --bg-l1: 10%;
+    --bg-s2: 55%; --bg-l2: 15%;
+    --h: 235; --h2: 275;
+  }
+
+  #sky { position: fixed; inset: 0; overflow: hidden; cursor: pointer; }
+
+  /* static stars for this page even in day theme */
+  #stars {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(2px 2px at 15% 25%, rgba(255,255,255,0.9), transparent),
+      radial-gradient(2px 2px at 33% 60%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(3px 3px at 46% 15%, rgba(255,255,240,0.8), transparent),
+      radial-gradient(2px 2px at 62% 40%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(2px 2px at 71% 75%, rgba(255,255,255,0.7), transparent),
+      radial-gradient(3px 3px at 82% 22%, rgba(255,255,240,0.85), transparent),
+      radial-gradient(2px 2px at 91% 58%, rgba(255,255,255,0.55), transparent),
+      radial-gradient(2px 2px at 8% 78%, rgba(255,255,255,0.6), transparent);
+    animation: twinkle 3s ease-in-out infinite alternate;
+  }
+
+  .rocket {
+    position: fixed;
+    width: 8px; height: 22px;
+    border-radius: 4px;
+    background: linear-gradient(to top, transparent, hsl(var(--fh), 100%, 75%));
+    box-shadow: 0 0 12px hsl(var(--fh), 100%, 70%);
+    pointer-events: none;
+    z-index: 10;
+    animation: rocketUp var(--rt) ease-out forwards;
+  }
+
+  @keyframes rocketUp {
+    from { transform: translateY(0) scaleY(1.4); opacity: 1; }
+    to   { transform: translateY(var(--rise)) scaleY(0.8); opacity: 0.9; }
+  }
+
+  .spark {
+    position: fixed;
+    width: var(--sz, 10px); height: var(--sz, 10px);
+    border-radius: 50%;
+    background: hsl(var(--fh), 100%, var(--fl, 65%));
+    box-shadow: 0 0 10px hsl(var(--fh), 100%, 60%), 0 0 22px hsla(var(--fh), 100%, 60%, 0.6);
+    pointer-events: none;
+    z-index: 11;
+    animation: sparkFly 1.15s ease-out forwards;
+  }
+
+  @keyframes sparkFly {
+    0%   { transform: rotate(var(--ang)) translateY(0) scale(1); opacity: 1; }
+    70%  { opacity: 1; }
+    100% { transform: rotate(var(--ang)) translateY(calc(var(--dist) * -1)) scale(0.25); opacity: 0; }
+  }
+
+  .flash {
+    position: fixed;
+    width: 26px; height: 26px;
+    margin: -13px;
+    border-radius: 50%;
+    background: white;
+    pointer-events: none;
+    z-index: 11;
+    animation: flashOut 0.45s ease-out forwards;
+  }
+
+  @keyframes flashOut {
+    from { transform: scale(1); opacity: 1; }
+    to   { transform: scale(7); opacity: 0; }
+  }
+
+  #hint {
+    position: fixed;
+    left: 50%; bottom: 24px;
+    transform: translateX(-50%);
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    font-weight: bold;
+    color: hsl(45, 90%, 80%);
+    background: rgba(20, 16, 44, 0.75);
+    padding: 8px 22px;
+    border-radius: 999px;
+    pointer-events: none;
+    z-index: 8;
+  }
+</style>
+</head>
+<body>
+
+<div id="stars"></div>
+<div id="sky"></div>
+<div id="hint">🎆 Tap the sky or press any key!</div>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const COLORS = [
+    ['Red', 0], ['Orange', 28], ['Gold', 48], ['Green', 130],
+    ['Blue', 205], ['Purple', 275], ['Pink', 325]
+  ];
+
+  LP.initPage({ counterEmoji: '🎆', milestone: 15 });
+  LP.speak('Tap the sky, ' + LP.playerName + '!');
+
+  const sky = document.getElementById('sky');
+  let launches = 0;
+
+  /* ---- crackle + boom (Web Audio, no files) ---- */
+  let actx = null;
+  function audio() {
+    if (!actx) {
+      const AC = globalThis.AudioContext || globalThis.webkitAudioContext;
+      if (!AC) return null;
+      actx = new AC();
+    }
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+
+  function boom() {
+    if (!LP.isSoundOn()) return;
+    const ac = audio();
+    if (!ac) return;
+    const t = ac.currentTime;
+    const osc = ac.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(120, t);
+    osc.frequency.exponentialRampToValueAtTime(38, t + 0.4);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.4, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    osc.connect(g); g.connect(ac.destination);
+    osc.start(t); osc.stop(t + 0.5);
+
+    const len = 0.5;
+    const buf = ac.createBuffer(1, ac.sampleRate * len, ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2);
+    }
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    const hp = ac.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 3000;
+    const g2 = ac.createGain();
+    g2.gain.setValueAtTime(0.22, t);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + len);
+    src.connect(hp); hp.connect(g2); g2.connect(ac.destination);
+    src.start(t);
+  }
+
+  /* ---- visuals ---- */
+  function burst(x, y, hue, rainbow) {
+    const flash = document.createElement('div');
+    flash.className = 'flash';
+    flash.style.left = x + 'px';
+    flash.style.top = y + 'px';
+    flash.addEventListener('animationend', function () { flash.remove(); });
+    sky.appendChild(flash);
+
+    const n = 16;
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement('div');
+      s.className = 'spark';
+      s.style.left = x + 'px';
+      s.style.top = y + 'px';
+      s.style.setProperty('--ang', (i * 360 / n + LP.rand(-8, 8)) + 'deg');
+      s.style.setProperty('--dist', LP.rand(90, Math.min(220, innerWidth * 0.28)) + 'px');
+      s.style.setProperty('--fh', rainbow ? Math.floor(LP.rand(0, 360)) : hue + Math.floor(LP.rand(-12, 12)));
+      s.style.setProperty('--fl', LP.rand(55, 75) + '%');
+      s.style.setProperty('--sz', LP.rand(7, 13) + 'px');
+      s.addEventListener('animationend', function () { s.remove(); });
+      sky.appendChild(s);
+    }
+    boom();
+  }
+
+  function launch(tx, ty) {
+    const color = LP.pick(COLORS);
+    const x = tx === undefined ? LP.rand(innerWidth * 0.12, innerWidth * 0.88) : tx;
+    const y = ty === undefined ? LP.rand(innerHeight * 0.15, innerHeight * 0.5) : Math.min(ty, innerHeight * 0.7);
+    const rise = y - innerHeight;
+    const rt = 0.55;
+
+    const r = document.createElement('div');
+    r.className = 'rocket';
+    r.style.left = (x - 4) + 'px';
+    r.style.top = (innerHeight - 10) + 'px';
+    r.style.setProperty('--fh', color[1]);
+    r.style.setProperty('--rise', rise + 'px');
+    r.style.setProperty('--rt', rt + 's');
+    sky.appendChild(r);
+
+    launches++;
+    const big = launches % 5 === 0;
+
+    r.addEventListener('animationend', function () {
+      r.remove();
+      burst(x, y, color[1], big);
+      if (big) {
+        setTimeout(function () { burst(LP.rand(innerWidth * 0.2, innerWidth * 0.8), y * LP.rand(0.7, 1.1), 0, true); }, 180);
+        setTimeout(function () { burst(LP.rand(innerWidth * 0.2, innerWidth * 0.8), y * LP.rand(0.7, 1.1), 0, true); }, 360);
+        LP.speak('Wow! Rainbow!');
+      } else {
+        LP.speak(color[0] + '!');
+      }
+    });
+
+    LP.bumpCounter();
+  }
+
+  sky.addEventListener('pointerdown', function (e) {
+    launch(e.clientX, e.clientY);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    const key = LP.guardKey(e);
+    if (key !== null) launch();
+  });
+})();
+</script>
+</body>
+</html>

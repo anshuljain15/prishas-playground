@@ -4,12 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prisha's Playground 🎪 — Free Learning Games for Toddlers</title>
-<meta name="description" content="Five free, safe browser games for toddlers (ages 1–4): letters, balloons, music, painting and animals. No ads, no tracking, no downloads — made with love by two new parents.">
+<meta name="description" content="Nine free, safe browser games for toddlers (ages 1–4): letters, balloons, music, painting, animals, fireworks, shapes and more. No ads, no tracking, no downloads — made with love by two new parents.">
 <meta property="og:title" content="Prisha's Playground 🎪">
-<meta property="og:description" content="Free, safe learning games for toddlers — letters, balloons, music, painting & animals. No ads, no tracking, just press any key!">
+<meta property="og:description" content="Nine free, safe learning games for toddlers — letters, music, fireworks, bubbles, shapes & more. No ads, no tracking, just press any key!">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#a855f7">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<script>
+(function () { 'use strict';
+  let t = localStorage.getItem('lp_theme');
+  if (!t && matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+  if (t === 'dark') document.documentElement.dataset.theme = 'dark';
+})();
+</script>
 <link rel="stylesheet" href="shared.css">
 <style>
   /* shared.css locks scrolling for the game screens; this page must scroll,
@@ -37,7 +44,7 @@
 
   #hub h1 {
     font-size: clamp(2rem, 7vw, 4rem);
-    color: hsl(280, 70%, 40%);
+    color: var(--ink-strong);
     text-shadow: 3px 3px 0 rgba(255,255,255,0.8);
     animation: bounceTitle 2s ease-in-out infinite;
     text-align: center;
@@ -51,14 +58,14 @@
   #greeting {
     font-size: clamp(1.2rem, 4vw, 1.8rem);
     font-weight: bold;
-    color: hsl(20, 85%, 38%);
-    background: rgba(255,255,255,0.75);
+    color: var(--ink-accent);
+    background: var(--surface-soft);
     padding: 6px 22px;
     border-radius: 999px;
     display: flex; align-items: center; gap: 10px;
   }
 
-  #editNameBtn, #hubSoundBtn {
+  #editNameBtn, #hubSoundBtn, #hubThemeBtn {
     font-size: 1.2rem;
     background: none; border: none; cursor: pointer;
   }
@@ -92,6 +99,10 @@
   .card:nth-child(3) .icon { animation-delay: 0.6s; }
   .card:nth-child(4) .icon { animation-delay: 0.9s; }
   .card:nth-child(5) .icon { animation-delay: 1.2s; }
+  .card:nth-child(6) .icon { animation-delay: 0.15s; }
+  .card:nth-child(7) .icon { animation-delay: 0.45s; }
+  .card:nth-child(8) .icon { animation-delay: 0.75s; }
+  .card:nth-child(9) .icon { animation-delay: 1.05s; }
 
   @keyframes iconBob {
     0%, 100% { transform: translateY(0) rotate(-4deg); }
@@ -101,19 +112,29 @@
   .card .name { font-size: clamp(1.4rem, 4vw, 2rem); font-weight: bold; color: white; text-shadow: 2px 2px 0 rgba(0,0,0,0.25); }
   .card .sub  { font-size: clamp(0.95rem, 2.5vw, 1.15rem); color: rgba(255,255,255,0.95); font-weight: bold; }
 
-  .c-letters  { background: linear-gradient(145deg, hsl(275, 75%, 58%), hsl(300, 70%, 50%)); }
-  .c-balloons { background: linear-gradient(145deg, hsl(350, 85%, 60%), hsl(15, 90%, 55%)); }
-  .c-piano    { background: linear-gradient(145deg, hsl(200, 85%, 50%), hsl(230, 75%, 55%)); }
-  .c-paint    { background: linear-gradient(145deg, hsl(140, 70%, 42%), hsl(170, 75%, 38%)); }
-  .c-animals  { background: linear-gradient(145deg, hsl(35, 95%, 50%), hsl(50, 95%, 45%)); }
+  .c-letters   { background: linear-gradient(145deg, hsl(275, 75%, 58%), hsl(300, 70%, 50%)); }
+  .c-balloons  { background: linear-gradient(145deg, hsl(350, 85%, 60%), hsl(15, 90%, 55%)); }
+  .c-piano     { background: linear-gradient(145deg, hsl(200, 85%, 50%), hsl(230, 75%, 55%)); }
+  .c-paint     { background: linear-gradient(145deg, hsl(140, 70%, 42%), hsl(170, 75%, 38%)); }
+  .c-animals   { background: linear-gradient(145deg, hsl(35, 95%, 50%), hsl(50, 95%, 45%)); }
+  .c-fireworks { background: linear-gradient(145deg, hsl(245, 65%, 38%), hsl(280, 70%, 34%)); }
+  .c-monster   { background: linear-gradient(145deg, hsl(268, 70%, 52%), hsl(315, 70%, 45%)); }
+  .c-bubbles   { background: linear-gradient(145deg, hsl(190, 85%, 44%), hsl(215, 80%, 52%)); }
+  .c-shapes    { background: linear-gradient(145deg, hsl(0, 80%, 55%), hsl(330, 80%, 48%)); }
 
   .parent-tip {
     font-size: 0.95rem;
-    color: hsl(280, 40%, 28%);
-    background: rgba(255,255,255,0.7);
+    color: var(--ink);
+    background: var(--surface-soft);
     padding: 8px 18px;
     border-radius: 999px;
   }
+
+  /* night-mode variant of the name overlay */
+  html[data-theme="dark"] #nameOverlay {
+    background: linear-gradient(160deg, hsl(255, 45%, 16%), hsl(310, 40%, 18%), hsl(210, 45%, 15%));
+  }
+  html[data-theme="dark"] #nameOverlay h2 { color: hsl(280, 90%, 80%); text-shadow: none; }
 
   /* ---------- Name overlay ---------- */
   #nameOverlay {
@@ -173,6 +194,7 @@
   <div id="greeting">
     <span>⭐ <span id="greetName"></span></span>
     <button id="editNameBtn" type="button" aria-label="Change name">✏️</button>
+    <button id="hubThemeBtn" type="button" aria-label="Day or night mode">🌙</button>
     <button id="hubSoundBtn" type="button" aria-label="Sound on or off">🔊</button>
   </div>
 
@@ -201,6 +223,26 @@
       <span class="icon">🦁</span>
       <span class="name">Animal Parade</span>
       <span class="sub">Meet the animals!</span>
+    </a>
+    <a class="card c-fireworks" href="fireworks.html">
+      <span class="icon">🎆</span>
+      <span class="name">Fireworks Night</span>
+      <span class="sub">Tap the sky!</span>
+    </a>
+    <a class="card c-monster" href="monster.html">
+      <span class="icon">👾</span>
+      <span class="name">Feed the Monster</span>
+      <span class="sub">Nom nom nom!</span>
+    </a>
+    <a class="card c-bubbles" href="bubbles.html">
+      <span class="icon">🫧</span>
+      <span class="name">Bubble Peekaboo</span>
+      <span class="sub">Pop a surprise!</span>
+    </a>
+    <a class="card c-shapes" href="shapes.html">
+      <span class="icon">🔺</span>
+      <span class="name">Shape Tap</span>
+      <span class="sub">Find the shape!</span>
     </a>
   </div>
 
@@ -240,6 +282,20 @@
     soundOn = !soundOn;
     localStorage.setItem('lp_sound', soundOn ? 'on' : 'off');
     soundBtn.textContent = soundOn ? '🔊' : '🔇';
+  });
+
+  const themeBtn = document.getElementById('hubThemeBtn');
+  function paintThemeBtn() {
+    themeBtn.textContent =
+      document.documentElement.dataset.theme === 'dark' ? '☀️' : '🌙';
+  }
+  paintThemeBtn();
+  themeBtn.addEventListener('click', function () {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    if (dark) delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = 'dark';
+    localStorage.setItem('lp_theme', dark ? 'light' : 'dark');
+    paintThemeBtn();
   });
 
   function refreshGreeting() {

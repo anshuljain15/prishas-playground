@@ -6,6 +6,13 @@
 <title>For Parents 🛡️ · Prisha's Playground</title>
 <meta name="description" content="Safety, privacy and learning goals of Prisha's Playground — no ads, no tracking, no data collection. Everything stays on your device.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<script>
+(function () { 'use strict';
+  let t = localStorage.getItem('lp_theme');
+  if (!t && matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+  if (t === 'dark') document.documentElement.dataset.theme = 'dark';
+})();
+</script>
 <link rel="stylesheet" href="shared.css">
 <style>
   /* unlock scrolling on both html and body (iOS WebKit requirement) */
@@ -27,10 +34,10 @@
   th, td {
     text-align: left;
     padding: 10px 12px;
-    border-bottom: 2px solid hsl(280, 40%, 90%);
+    border-bottom: 2px solid var(--surface-soft);
   }
 
-  th { color: hsl(280, 70%, 38%); }
+  th { color: var(--ink-strong); }
   td:first-child { white-space: nowrap; font-weight: bold; }
 
   .promise {
@@ -40,6 +47,11 @@
     padding: 14px 18px;
     margin: 14px 0;
     font-weight: bold;
+  }
+
+  html[data-theme="dark"] .promise {
+    background: hsl(140, 40%, 16%);
+    border-color: hsl(140, 45%, 38%);
   }
 </style>
 </head>
@@ -69,6 +81,10 @@
       <tr><td>🎹 Musical Keys</td><td>Sound exploration, rhythm, cause &amp; effect (every note is a "right" note)</td></tr>
       <tr><td>🎨 Finger Paint</td><td>Fine motor control, creativity, color names</td></tr>
       <tr><td>🦁 Animal Parade</td><td>Animal names and sounds, first letters, gentle tapping</td></tr>
+      <tr><td>🎆 Fireworks Night</td><td>Colors, cause &amp; effect, visual tracking</td></tr>
+      <tr><td>👾 Feed the Monster</td><td>Food names, cause &amp; effect, nurturing play</td></tr>
+      <tr><td>🫧 Bubble Peekaboo</td><td>Object permanence, first words, anticipation &amp; surprise</td></tr>
+      <tr><td>🔺 Shape Tap</td><td>Shapes, listening &amp; matching (best for 3–4y)</td></tr>
     </table>
 
     <h2>💡 Tips for a good session</h2>

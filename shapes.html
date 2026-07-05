@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shape Tap 🔺 · Prisha's Playground</title>
+<meta name="description" content="Find and tap the matching shape — a free toddler shapes-and-colors game from Prisha's Playground.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<script>
+(function () { 'use strict';
+  let t = localStorage.getItem('lp_theme');
+  if (!t && matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+  if (t === 'dark') document.documentElement.dataset.theme = 'dark';
+})();
+</script>
+<link rel="stylesheet" href="shared.css">
+<style>
+  #arena {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: clamp(30px, 8vh, 70px);
+    padding-top: 70px;
+  }
+
+  #ask {
+    display: flex; align-items: center; gap: 16px;
+    font-size: clamp(1.5rem, 5vw, 2.6rem);
+    font-weight: bold;
+    color: var(--ink);
+    background: var(--surface-soft);
+    padding: 12px 34px;
+    border-radius: 999px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  }
+
+  #ask .mini { width: 46px; height: 46px; flex: none; }
+
+  #choices {
+    display: flex;
+    gap: clamp(18px, 6vw, 60px);
+    align-items: center;
+  }
+
+  .shape-btn {
+    background: none; border: none; padding: 10px;
+    cursor: pointer;
+    animation: shapeBounce 1.6s ease-in-out infinite;
+    touch-action: manipulation;
+  }
+
+  .shape-btn:nth-child(2) { animation-delay: 0.25s; }
+  .shape-btn:nth-child(3) { animation-delay: 0.5s; }
+
+  @keyframes shapeBounce {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-16px); }
+  }
+
+  .shape {
+    width: clamp(90px, 22vmin, 170px);
+    height: clamp(90px, 22vmin, 170px);
+    background: hsl(var(--sh), 80%, 55%);
+    box-shadow: 0 8px 0 hsl(var(--sh), 80%, 38%), 0 12px 20px rgba(0,0,0,0.2);
+  }
+
+  .shape.circle   { border-radius: 50%; }
+  .shape.square   { border-radius: 14%; }
+  .shape.triangle { clip-path: polygon(50% 4%, 2% 98%, 98% 98%); box-shadow: none; filter: drop-shadow(0 8px 6px rgba(0,0,0,0.25)); }
+  .shape.star     { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); box-shadow: none; filter: drop-shadow(0 8px 6px rgba(0,0,0,0.25)); }
+  .shape.diamond  { border-radius: 12%; transform: rotate(45deg) scale(0.82); }
+
+  .shape-btn.wrong { animation: wrongWiggle 0.5s ease; }
+
+  @keyframes wrongWiggle {
+    0%, 100% { transform: translateX(0) rotate(0); }
+    25% { transform: translateX(-12px) rotate(-6deg); }
+    50% { transform: translateX(12px) rotate(6deg); }
+    75% { transform: translateX(-8px) rotate(-3deg); }
+  }
+
+  .shape-btn.right { animation: rightPop 0.7s ease; }
+
+  @keyframes rightPop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.35) rotate(8deg); }
+    100% { transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<div id="arena">
+  <div id="ask"><span>Find the</span><span class="mini shape circle" id="askShape" style="--sh:210"></span><span id="askName">circle</span>!</div>
+  <div id="choices"></div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const SHAPES = [
+    ['circle', 'Circle'], ['square', 'Square'], ['triangle', 'Triangle'],
+    ['star', 'Star'], ['diamond', 'Diamond']
+  ];
+  const HUES = [0, 30, 52, 130, 210, 275, 330];
+
+  const choices = document.getElementById('choices');
+  const askShape = document.getElementById('askShape');
+  const askName = document.getElementById('askName');
+  let target = null;
+  let locked = false;
+
+  LP.initPage({ counterEmoji: '⭐', milestone: 5 });
+  LP.speak('Find the shapes, ' + LP.playerName + '!');
+
+  function newRound(announce) {
+    locked = false;
+    // pick target + two distinct decoys
+    const pool = SHAPES.slice();
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+    }
+    const round = pool.slice(0, 3);
+    target = LP.pick(round);
+
+    askShape.className = 'mini shape ' + target[0];
+    askShape.style.setProperty('--sh', LP.pick(HUES));
+    askName.textContent = target[1].toLowerCase();
+
+    while (choices.firstElementChild) choices.firstElementChild.remove();
+    round.forEach(function (s) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'shape-btn';
+      btn.setAttribute('aria-label', s[1]);
+      const sh = document.createElement('div');
+      sh.className = 'shape ' + s[0];
+      sh.style.setProperty('--sh', LP.pick(HUES));
+      btn.appendChild(sh);
+      btn.addEventListener('pointerdown', function () { choose(btn, s); });
+      choices.appendChild(btn);
+    });
+
+    if (announce !== false) LP.speak('Find the ' + target[1] + '!', true);
+  }
+
+  function choose(btn, s) {
+    if (locked) return;
+    if (s[0] === target[0]) {
+      locked = true;
+      btn.classList.add('right');
+      const rect = btn.getBoundingClientRect();
+      LP.burstAt(rect.left + rect.width / 2, rect.top, ['🎉', '⭐', '✨']);
+      LP.speak('Yes! ' + target[1] + '!', true);
+      LP.bumpCounter();
+      setTimeout(newRound, 1100);
+    } else {
+      btn.classList.remove('wrong');
+      requestAnimationFrame(function () { btn.classList.add('wrong'); });
+      LP.speak('That is a ' + s[1] + '. Try the ' + target[1] + '!');
+    }
+  }
+
+  // keys 1/2/3 choose shapes left-to-right
+  document.addEventListener('keydown', function (e) {
+    const key = LP.guardKey(e);
+    if (key === null) return;
+    if (key >= '1' && key <= '3') {
+      const btn = choices.children[Number.parseInt(key, 10) - 1];
+      if (btn) btn.dispatchEvent(new Event('pointerdown'));
+    }
+  });
+
+  newRound(false);
+  setTimeout(function () { LP.speak('Find the ' + target[1] + '!', true); }, 1200);
+})();
+</script>
+</body>
+</html>

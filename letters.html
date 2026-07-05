@@ -6,6 +6,13 @@
 <title>Letter Pops 🔤 · Prisha's Playground</title>
 <meta name="description" content="Press any key and watch letters burst into emojis — a free toddler alphabet game from Prisha's Playground.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<script>
+(function () { 'use strict';
+  let t = localStorage.getItem('lp_theme');
+  if (!t && matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+  if (t === 'dark') document.documentElement.dataset.theme = 'dark';
+})();
+</script>
 <link rel="stylesheet" href="shared.css">
 <style>
   /* On-screen keyboard — only for touch devices (phones/tablets) */
@@ -16,7 +23,7 @@
     flex-direction: column;
     gap: 6px;
     padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
-    background: rgba(255, 255, 255, 0.82);
+    background: var(--surface);
     backdrop-filter: blur(8px);
     box-shadow: 0 -4px 14px rgba(0,0,0,0.12);
     z-index: 46;
