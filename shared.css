@@ -137,6 +137,42 @@ body {
   border-color: hsl(255, 60%, 62%);
 }
 
+/* ---------- Chrome-for-iOS speech notice ---------- */
+#criosNotice {
+  position: fixed;
+  top: 70px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 55;
+  display: flex; align-items: center; gap: 12px;
+  max-width: min(92vw, 560px);
+  background: hsl(35, 95%, 92%);
+  border: 3px solid hsl(35, 85%, 60%);
+  color: hsl(25, 70%, 25%);
+  font-weight: bold;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  padding: 12px 16px;
+  border-radius: 18px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+}
+
+html[data-theme="dark"] #criosNotice {
+  background: hsl(35, 55%, 20%);
+  border-color: hsl(35, 70%, 45%);
+  color: hsl(40, 90%, 88%);
+}
+
+#criosNotice button {
+  flex: none;
+  font-size: 1.1rem;
+  font-weight: bold;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
 /* ---------- Effects layer (confetti / floating emojis) ---------- */
 #fxLayer {
   position: fixed; inset: 0;

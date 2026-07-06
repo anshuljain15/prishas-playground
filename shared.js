@@ -40,6 +40,27 @@ const LP = (function () {
     });
   }
 
+  /* ---------- Chrome-for-iOS speech notice ---------- */
+  // Chrome on iPhone/iPad (CriOS) has a long-standing unfixed bug: it must
+  // run on Apple's WebKit engine (App Store rule), but Google never wired
+  // speechSynthesis through it — speak() succeeds silently, no events ever
+  // fire, no audio plays. Nothing fixable from page code; tell the user.
+  const IS_CRIOS = /CriOS/i.test(navigator.userAgent);
+
+  function showCriosNotice() {
+    if (!IS_CRIOS || sessionStorage.getItem('lp_crios_notice_shown')) return;
+    sessionStorage.setItem('lp_crios_notice_shown', '1');
+    const el = document.createElement('div');
+    el.id = 'criosNotice';
+    el.innerHTML =
+      '<span>🔈 Chrome on iPhone can\'t play spoken words in these games — ' +
+      'it\'s a Chrome/Apple limitation. Open this page in <b>Safari</b> to hear voices!</span>' +
+      '<button type="button" id="criosNoticeClose" aria-label="Dismiss">✕</button>';
+    document.body.appendChild(el);
+    document.getElementById('criosNoticeClose').addEventListener('click', function () { el.remove(); });
+    setTimeout(function () { if (el.parentNode) el.remove(); }, 10000);
+  }
+
   /* ---------- Top bar + fx layer ---------- */
   function initPage(opts) {
     opts = opts || {};
@@ -75,6 +96,8 @@ const LP = (function () {
     fxLayer = document.createElement('div');
     fxLayer.id = 'fxLayer';
     document.body.appendChild(fxLayer);
+
+    showCriosNotice();
 
     counterEl = document.getElementById('counter');
     const soundBtn = document.getElementById('soundBtn');
@@ -299,6 +322,7 @@ const LP = (function () {
     bumpCounter: bumpCounter,
     celebrate: celebrate,
     guardKey: guardKey,
-    isSoundOn: function () { return soundOn; }
+    isSoundOn: function () { return soundOn; },
+    showCriosNotice: showCriosNotice
   };
 })();

@@ -19,6 +19,8 @@
 </script>
 <link rel="stylesheet" href="shared.css">
 <style>
+  #criosNotice { top: 14px; }
+
   /* shared.css locks scrolling for the game screens; this page must scroll,
      and iOS WebKit needs the unlock on BOTH html and body */
   html, body {
@@ -187,6 +189,7 @@
 </head>
 <body>
 
+<script src="shared.js"></script>
 <div id="hub">
   <div id="hubHeader">
     <h1>🎪 Prisha's Playground</h1>
@@ -330,6 +333,7 @@
 
   if (!localStorage.getItem('lp_name')) openOverlay();
   refreshGreeting();
+  LP.showCriosNotice();
 })();
 </script>
 </body>
