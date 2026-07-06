@@ -89,16 +89,48 @@ const LP = (function () {
   }
 
   /* ---------- Speech ---------- */
+  // iOS quirks handled here:
+  // 1. speech must first run inside a real user gesture ("unlock")
+  // 2. speak() immediately after cancel() fails silently — defer one tick
+  // 3. the utterance object must stay referenced or GC eats it mid-speech
+  let speechUnlocked = false;
+  let lastUtterance = null;
+  let pendingSpeech = null; // greeting spoken on load waits for the first gesture
+
+  function unlockSpeech() {
+    if (speechUnlocked || !('speechSynthesis' in globalThis)) return;
+    speechUnlocked = true;
+    try {
+      const u = new SpeechSynthesisUtterance(' ');
+      u.volume = 0;
+      speechSynthesis.speak(u);
+    } catch (e) { /* speech just stays off */ }
+    if (pendingSpeech) {
+      const t = pendingSpeech;
+      pendingSpeech = null;
+      speak(t, true);
+    }
+  }
+  document.addEventListener('pointerdown', unlockSpeech, true);
+  document.addEventListener('keydown', unlockSpeech, true);
+
   function speak(text, force) {
     if (!soundOn || !('speechSynthesis' in globalThis)) return;
+    if (!speechUnlocked) { pendingSpeech = text; return; }
     const now = Date.now();
     if (!force && now - lastSpeakTime < SPEAK_THROTTLE_MS) return;
     lastSpeakTime = now;
-    speechSynthesis.cancel();
+    if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.rate = 0.85;
     u.pitch = 1.2;
-    speechSynthesis.speak(u);
+    u.volume = 1;
+    lastUtterance = u;
+    setTimeout(function () {
+      if (!soundOn || lastUtterance !== u) return;
+      speechSynthesis.resume(); // iOS sometimes leaves the queue paused
+      speechSynthesis.speak(u);
+    }, 60);
   }
 
   /* ---------- Floating emoji effects ---------- */

@@ -314,9 +314,10 @@
     overlay.classList.add('hidden');
     refreshGreeting();
     if (soundOn && 'speechSynthesis' in globalThis) {
-      speechSynthesis.cancel();
+      if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance('Hello ' + name + '! Pick a game!');
-      u.rate = 0.85; u.pitch = 1.2;
+      u.rate = 0.85; u.pitch = 1.2; u.volume = 1;
+      globalThis.lpGreetUtterance = u; // keep referenced (iOS GC quirk)
       speechSynthesis.speak(u);
     }
   }
