@@ -88,23 +88,52 @@ const LP = (function () {
     });
   }
 
+  /* ---------- Debug overlay: add ?debug=1 to any game URL to see it ---------- */
+  const DEBUG = /[?&]debug=1\b/.test(location.search);
+  let dbgEl = null;
+  function dbg(msg) {
+    if (!DEBUG) return;
+    if (!dbgEl) {
+      dbgEl = document.createElement('div');
+      dbgEl.id = 'lpDebug';
+      dbgEl.style.cssText = 'position:fixed;left:0;right:0;bottom:0;max-height:42vh;' +
+        'overflow:auto;background:rgba(0,0,0,.88);color:#7CFC7C;font:11px/1.4 monospace;' +
+        'padding:6px 8px;z-index:99999;white-space:pre-wrap;pointer-events:auto;';
+      document.body.appendChild(dbgEl);
+    }
+    const line = document.createElement('div');
+    const t = new Date();
+    line.textContent = t.toISOString().slice(11, 19) + '.' + String(t.getMilliseconds()).padStart(3, '0') + '  ' + msg;
+    dbgEl.appendChild(line);
+    dbgEl.scrollTop = dbgEl.scrollHeight;
+  }
+  if (DEBUG) {
+    dbg('speechSynthesis in window: ' + ('speechSynthesis' in globalThis));
+    dbg('userAgent: ' + navigator.userAgent);
+    if ('speechSynthesis' in globalThis) {
+      dbg('voices at load: ' + speechSynthesis.getVoices().length);
+      speechSynthesis.addEventListener('voiceschanged', function () {
+        dbg('voiceschanged fired, voices now: ' + speechSynthesis.getVoices().length);
+      });
+    }
+  }
+
   /* ---------- Speech ---------- */
-  // iOS quirks handled here:
-  // 1. speech must first run inside a real user gesture ("unlock")
-  // 2. speak() immediately after cancel() fails silently — defer one tick
-  // 3. the utterance object must stay referenced or GC eats it mid-speech
+  // iOS/WebKit rule: speechSynthesis.speak() only produces audio when called
+  // SYNCHRONOUSLY inside a real user-gesture event handler — no setTimeout,
+  // no Promise .then(), no delay of any kind, or it silently does nothing.
   let speechUnlocked = false;
-  let lastUtterance = null;
   let pendingSpeech = null; // greeting spoken on load waits for the first gesture
 
   function unlockSpeech() {
     if (speechUnlocked || !('speechSynthesis' in globalThis)) return;
     speechUnlocked = true;
+    dbg('unlockSpeech: first gesture seen');
     try {
       const u = new SpeechSynthesisUtterance(' ');
       u.volume = 0;
       speechSynthesis.speak(u);
-    } catch (e) { /* speech just stays off */ }
+    } catch (e) { dbg('unlock speak() threw: ' + e.message); }
     if (pendingSpeech) {
       const t = pendingSpeech;
       pendingSpeech = null;
@@ -115,22 +144,35 @@ const LP = (function () {
   document.addEventListener('keydown', unlockSpeech, true);
 
   function speak(text, force) {
-    if (!soundOn || !('speechSynthesis' in globalThis)) return;
-    if (!speechUnlocked) { pendingSpeech = text; return; }
+    if (!soundOn || !('speechSynthesis' in globalThis)) {
+      dbg('speak("' + text + '") skipped: soundOn=' + soundOn + ' hasAPI=' + ('speechSynthesis' in globalThis));
+      return;
+    }
+    if (!speechUnlocked) {
+      dbg('speak("' + text + '") deferred: not yet unlocked');
+      pendingSpeech = text;
+      return;
+    }
     const now = Date.now();
-    if (!force && now - lastSpeakTime < SPEAK_THROTTLE_MS) return;
+    if (!force && now - lastSpeakTime < SPEAK_THROTTLE_MS) {
+      dbg('speak("' + text + '") throttled');
+      return;
+    }
     lastSpeakTime = now;
-    if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+    if (speechSynthesis.speaking) speechSynthesis.cancel();
+
     const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
     u.rate = 0.85;
     u.pitch = 1.2;
     u.volume = 1;
-    lastUtterance = u;
-    setTimeout(function () {
-      if (!soundOn || lastUtterance !== u) return;
-      speechSynthesis.resume(); // iOS sometimes leaves the queue paused
-      speechSynthesis.speak(u);
-    }, 60);
+    if (DEBUG) {
+      u.addEventListener('start', function () { dbg('EVENT start: "' + text + '"'); });
+      u.addEventListener('end', function () { dbg('EVENT end: "' + text + '"'); });
+      u.addEventListener('error', function (e) { dbg('EVENT error: "' + text + '" -> ' + e.error); });
+    }
+    dbg('speak("' + text + '") -> speechSynthesis.speak() called synchronously');
+    speechSynthesis.speak(u);
   }
 
   /* ---------- Floating emoji effects ---------- */
