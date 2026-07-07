@@ -66,11 +66,12 @@ const LP = (function () {
     opts = opts || {};
     milestoneEvery = opts.milestone || 25;
     const counterEmoji = opts.counterEmoji || '🎯';
+    const homeHref = opts.homeHref || 'index.html';
 
     const bar = document.createElement('header');
     bar.id = 'topBar';
     bar.innerHTML =
-      '<a id="homeBtn" href="index.html" aria-label="Back to game menu">🏠</a>' +
+      '<a id="homeBtn" href="' + homeHref + '" aria-label="Back to game menu">🏠</a>' +
       '<span id="playerName">⭐ ' + escapeHtml(playerName) + '</span>' +
       (opts.showCounter === false ? '<span></span>'
         : '<span id="counter">' + counterEmoji + ' 0</span>') +
