@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Hungry Puppy Maze 🐶 · Prisha's Playground</title>
+<meta name="description" content="Guide the puppy to collect bones and find its home — a free toddler maze game from Prisha's Playground.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<script>
+(function () { 'use strict';
+  let t = localStorage.getItem('lp_theme');
+  if (!t && matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+  if (t === 'dark') document.documentElement.dataset.theme = 'dark';
+})();
+</script>
+<link rel="stylesheet" href="shared.css">
+<style>
+  #wrap {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: clamp(14px, 3vh, 26px);
+    padding: 74px 12px 12px;
+  }
+
+  #board {
+    display: grid;
+    gap: 4px;
+    background: var(--surface-soft);
+    padding: 10px;
+    border-radius: 20px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.15);
+    position: relative;
+  }
+
+  .cell {
+    width: var(--cell); height: var(--cell);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: calc(var(--cell) * 0.6);
+    line-height: 1;
+  }
+
+  .cell.path { background: hsl(45, 90%, 92%); }
+  .cell.wall { background: hsl(120, 30%, 40%); box-shadow: inset 0 -4px 0 hsl(120,30%,30%); }
+
+  html[data-theme="dark"] .cell.path { background: hsl(250, 25%, 32%); }
+  html[data-theme="dark"] .cell.wall { background: hsl(120, 25%, 22%); box-shadow: inset 0 -4px 0 hsl(120,25%,15%); }
+
+  #puppy {
+    position: absolute;
+    width: var(--cell); height: var(--cell);
+    display: flex; align-items: center; justify-content: center;
+    font-size: calc(var(--cell) * 0.62);
+    transition: left 0.14s ease, top 0.14s ease;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  #puppy.hop { animation: hop 0.28s ease; }
+  @keyframes hop {
+    0%,100% { transform: translateY(0) scale(1); }
+    45% { transform: translateY(-18%) scale(1.12); }
+  }
+
+  #pad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas: ". up ." "left down right";
+    gap: 8px;
+  }
+
+  #pad button {
+    width: clamp(58px, 15vw, 82px);
+    height: clamp(58px, 15vw, 82px);
+    font-size: clamp(1.8rem, 6vw, 2.6rem);
+    border: none;
+    border-radius: 20px;
+    color: white;
+    background: linear-gradient(145deg, hsl(210, 80%, 55%), hsl(230, 75%, 52%));
+    box-shadow: 0 6px 0 hsl(225, 70%, 38%);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  #pad button:active { transform: translateY(4px); box-shadow: 0 2px 0 hsl(225, 70%, 38%); }
+  .btn-up { grid-area: up; } .btn-down { grid-area: down; }
+  .btn-left { grid-area: left; } .btn-right { grid-area: right; }
+
+  #hint {
+    position: fixed; left: 50%; top: 70px;
+    transform: translateX(-50%);
+    font-size: clamp(1rem, 3vw, 1.35rem);
+    font-weight: bold;
+    color: var(--ink);
+    background: var(--surface-soft);
+    padding: 6px 20px; border-radius: 999px;
+    pointer-events: none; z-index: 8;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<div id="hint">🐶 Help the puppy get the bones!</div>
+<div id="wrap">
+  <div id="board"><div id="puppy">🐶</div></div>
+  <div id="pad">
+    <button class="btn-up" type="button" aria-label="Up">⬆️</button>
+    <button class="btn-left" type="button" aria-label="Left">⬅️</button>
+    <button class="btn-down" type="button" aria-label="Down">⬇️</button>
+    <button class="btn-right" type="button" aria-label="Right">➡️</button>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  LP.initPage({ counterEmoji: '🦴', milestone: 12 });
+  LP.speak('Help the puppy get the bones, ' + LP.playerName + '!');
+
+  // Hand-designed open, trap-free layouts.
+  // # wall, . path, P puppy start, B bone, H home
+  const LAYOUTS = [
+    [
+      '......',
+      '.####.',
+      '.B..#.',
+      'P..#B.',
+      '.###..',
+      '....BH'
+    ],
+    [
+      'P....B',
+      '.####.',
+      '...B..',
+      '.#.##.',
+      '.#B...',
+      'H....B'
+    ],
+    [
+      'P.#...',
+      '..#.B.',
+      'B.#.#.',
+      '..#.#B',
+      '..B.#.',
+      '#...#H'
+    ],
+    [
+      'P...B.',
+      '.##.#.',
+      '.B#...',
+      '..#.#B',
+      'B.#.#.',
+      '....#H'
+    ]
+  ];
+
+  const board = document.getElementById('board');
+  const puppy = document.getElementById('puppy');
+  let rows, cols, cell, grid, px, py, bonesLeft, layoutIndex = 0;
+
+  function cellSize() {
+    const maxW = Math.min(innerWidth - 40, 460);
+    const maxH = innerHeight - 250;
+    return Math.max(38, Math.floor(Math.min(maxW / cols, maxH / rows)) - 4);
+  }
+
+  function loadLayout(idx) {
+    const map = LAYOUTS[idx % LAYOUTS.length];
+    rows = map.length; cols = map[0].length;
+    cell = cellSize();
+    board.style.gridTemplateColumns = 'repeat(' + cols + ', var(--cell))';
+    document.documentElement.style.setProperty('--cell', cell + 'px');
+
+    // clear old cells (keep puppy element)
+    Array.from(board.querySelectorAll('.cell')).forEach(function (c) { c.remove(); });
+
+    grid = [];
+    bonesLeft = 0;
+    for (let r = 0; r < rows; r++) {
+      grid[r] = [];
+      for (let c = 0; c < cols; c++) {
+        const ch = map[r][c];
+        const div = document.createElement('div');
+        div.className = 'cell ' + (ch === '#' ? 'wall' : 'path');
+        div.dataset.r = r; div.dataset.c = c;
+        if (ch === 'B') { div.textContent = '🦴'; grid[r][c] = 'B'; bonesLeft++; }
+        else if (ch === 'H') { div.textContent = '🏠'; grid[r][c] = 'H'; }
+        else if (ch === '#') { grid[r][c] = '#'; }
+        else { grid[r][c] = '.'; }
+        if (ch === 'P') { px = c; py = r; }
+        board.appendChild(div);
+      }
+    }
+    board.appendChild(puppy);
+    placePuppy();
+  }
+
+  function cellEl(r, c) {
+    return board.querySelector('.cell[data-r="' + r + '"][data-c="' + c + '"]');
+  }
+
+  function placePuppy() {
+    // board padding is 10px; cells are cell+4px gap apart
+    const step = cell + 4;
+    puppy.style.left = (10 + px * step) + 'px';
+    puppy.style.top = (10 + py * step) + 'px';
+  }
+
+  function move(dx, dy) {
+    const nx = px + dx, ny = py + dy;
+    if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) return;
+    if (grid[ny][nx] === '#') return;
+    px = nx; py = ny;
+    placePuppy();
+    puppy.classList.remove('hop');
+    void puppy.offsetWidth;
+    puppy.classList.add('hop');
+
+    if (grid[ny][nx] === 'B') {
+      grid[ny][nx] = '.';
+      const el = cellEl(ny, nx);
+      if (el) el.textContent = '';
+      bonesLeft--;
+      const rect = puppy.getBoundingClientRect();
+      LP.burstAt(rect.left + rect.width / 2, rect.top + rect.height / 2, ['✨', '⭐']);
+      LP.speak('Yum!');
+      LP.bumpCounter();
+    } else if (grid[ny][nx] === 'H') {
+      if (bonesLeft <= 0) {
+        const rect = puppy.getBoundingClientRect();
+        LP.burstAt(rect.left + rect.width / 2, rect.top + rect.height / 2, ['🎉', '🦴', '⭐']);
+        LP.celebrate('Woof! Home sweet home, ' + LP.playerName + '!');
+        layoutIndex++;
+        setTimeout(function () { loadLayout(layoutIndex); }, 1600);
+      } else {
+        LP.speak('Get the bones first!');
+      }
+    }
+  }
+
+  document.querySelector('.btn-up').addEventListener('pointerdown', function (e) { e.preventDefault(); move(0, -1); });
+  document.querySelector('.btn-down').addEventListener('pointerdown', function (e) { e.preventDefault(); move(0, 1); });
+  document.querySelector('.btn-left').addEventListener('pointerdown', function (e) { e.preventDefault(); move(-1, 0); });
+  document.querySelector('.btn-right').addEventListener('pointerdown', function (e) { e.preventDefault(); move(1, 0); });
+
+  document.addEventListener('keydown', function (e) {
+    const key = LP.guardKey(e);
+    if (key === null) return;
+    if (key === 'ArrowUp') move(0, -1);
+    else if (key === 'ArrowDown') move(0, 1);
+    else if (key === 'ArrowLeft') move(-1, 0);
+    else if (key === 'ArrowRight') move(1, 0);
+  });
+
+  addEventListener('resize', function () { loadLayout(layoutIndex); });
+  loadLayout(0);
+})();
+</script>
+</body>
+</html>

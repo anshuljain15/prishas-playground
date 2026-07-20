@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sorting Bins 🧩 · Prisha's Playground</title>
+<meta name="description" content="Drag each thing into the right bin — a free toddler sorting game from Prisha's Playground.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<script>
+(function () { 'use strict';
+  let t = localStorage.getItem('lp_theme');
+  if (!t && matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+  if (t === 'dark') document.documentElement.dataset.theme = 'dark';
+})();
+</script>
+<link rel="stylesheet" href="shared.css">
+<style>
+  #wrap {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: space-between;
+    padding: 74px 16px 28px;
+    touch-action: none;
+  }
+
+  #hint {
+    font-size: clamp(1rem, 3vw, 1.35rem);
+    font-weight: bold; color: var(--ink);
+    background: var(--surface-soft);
+    padding: 6px 20px; border-radius: 999px;
+    text-align: center;
+  }
+
+  #itemZone {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    width: 100%;
+    position: relative;
+  }
+
+  #item {
+    font-size: clamp(4rem, 16vmin, 7rem);
+    line-height: 1;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    filter: drop-shadow(0 6px 8px rgba(0,0,0,0.25));
+    animation: itemIn 0.3s ease;
+  }
+  @keyframes itemIn { from { transform: scale(0) rotate(-20deg); } }
+  #item.dragging { cursor: grabbing; }
+  #item.spring { transition: left 0.35s ease, top 0.35s ease; }
+
+  #bins {
+    display: flex; gap: clamp(20px, 8vw, 70px);
+    justify-content: center; width: 100%;
+  }
+
+  .bin {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px;
+    padding: 14px clamp(14px, 6vw, 40px);
+    border-radius: 24px;
+    border: 4px dashed var(--surface-soft);
+    background: var(--surface-soft);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .bin.over { transform: scale(1.08); border-color: hsl(140, 70%, 50%); }
+  .bin .binIcon { font-size: clamp(3rem, 12vw, 4.4rem); line-height: 1; }
+  .bin .binLabel { font-weight: bold; color: var(--ink); font-size: clamp(0.9rem, 3vw, 1.1rem); }
+</style>
+</head>
+<body>
+
+<div id="wrap">
+  <div id="hint"></div>
+  <div id="itemZone"><span id="item"></span></div>
+  <div id="bins"></div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  // Each round: an item belongs to one category. Bins are the categories.
+  const CATEGORIES = [
+    { key: 'fruit',  icon: '🍎', label: 'Food',    items: ['🍎','🍌','🍓','🍇','🍕','🥕','🍩','🧀'] },
+    { key: 'animal', icon: '🐶', label: 'Animals', items: ['🐶','🐱','🐰','🦁','🐸','🐮','🐧','🐵'] },
+    { key: 'toy',    icon: '🧸', label: 'Toys',    items: ['🧸','⚽','🪀','🎈','🚗','🪁','🎨','🧩'] }
+  ];
+
+  LP.initPage({ counterEmoji: '🧩', milestone: 5 });
+  LP.speak('Put each thing in the right bin, ' + LP.playerName + '!');
+
+  const wrap = document.getElementById('wrap');
+  const hint = document.getElementById('hint');
+  const itemEl = document.getElementById('item');
+  const binsEl = document.getElementById('bins');
+
+  // Use two bins per round for simplicity (the correct one + one other)
+  let round = null;
+  const binEls = [];
+
+  function buildBins(catA, catB) {
+    binsEl.innerHTML = '';
+    binEls.length = 0;
+    [catA, catB].forEach(function (cat) {
+      const bin = document.createElement('div');
+      bin.className = 'bin';
+      bin.dataset.key = cat.key;
+      bin.innerHTML = '<span class="binIcon">' + cat.icon + '</span><span class="binLabel">' + cat.label + '</span>';
+      binsEl.appendChild(bin);
+      binEls.push(bin);
+    });
+  }
+
+  function newRound() {
+    // pick correct category + a different distractor, randomize bin order
+    const correct = LP.pick(CATEGORIES);
+    let other = LP.pick(CATEGORIES);
+    while (other.key === correct.key) other = LP.pick(CATEGORIES);
+    const bins = Math.random() < 0.5 ? [correct, other] : [other, correct];
+    buildBins(bins[0], bins[1]);
+
+    round = { correctKey: correct.key, emoji: LP.pick(correct.items), label: correct.label };
+    itemEl.textContent = round.emoji;
+    itemEl.classList.remove('spring');
+    hint.textContent = 'Where does this go?';
+    resetItemPos();
+  }
+
+  function resetItemPos() {
+    itemEl.style.position = '';
+    itemEl.style.left = '';
+    itemEl.style.top = '';
+  }
+
+  // drag handling
+  let dragging = false, homeRect = null;
+
+  itemEl.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    dragging = true;
+    homeRect = itemEl.getBoundingClientRect();
+    itemEl.classList.add('dragging');
+    itemEl.classList.remove('spring');
+    itemEl.style.position = 'fixed';
+    itemEl.style.width = homeRect.width + 'px';
+    itemEl.style.textAlign = 'center';
+    itemEl.setPointerCapture(e.pointerId);
+    moveItem(e.clientX, e.clientY);
+  });
+
+  itemEl.addEventListener('pointermove', function (e) {
+    if (!dragging) return;
+    moveItem(e.clientX, e.clientY);
+    highlightBins(e.clientX, e.clientY);
+  });
+
+  itemEl.addEventListener('pointerup', function (e) {
+    if (!dragging) return;
+    dragging = false;
+    itemEl.classList.remove('dragging');
+    const bin = binUnder(e.clientX, e.clientY);
+    binEls.forEach(function (b) { b.classList.remove('over'); });
+    if (bin) {
+      if (bin.dataset.key === round.correctKey) {
+        const r = bin.getBoundingClientRect();
+        LP.burstAt(r.left + r.width / 2, r.top, ['✨','⭐','🎉']);
+        LP.speak('Yes! ' + round.label + '!', true);
+        LP.bumpCounter();
+        itemEl.style.display = 'none';
+        setTimeout(function () { itemEl.style.display = ''; itemEl.style.width = ''; newRound(); }, 500);
+        return;
+      } else {
+        LP.speak('Try the other bin!');
+      }
+    }
+    // spring back home
+    itemEl.classList.add('spring');
+    itemEl.style.left = homeRect.left + 'px';
+    itemEl.style.top = homeRect.top + 'px';
+    setTimeout(function () { itemEl.style.width = ''; resetItemPos(); itemEl.classList.remove('spring'); }, 360);
+  });
+
+  function moveItem(x, y) {
+    itemEl.style.left = (x - homeRect.width / 2) + 'px';
+    itemEl.style.top = (y - homeRect.height / 2) + 'px';
+  }
+
+  function binUnder(x, y) {
+    for (const b of binEls) {
+      const r = b.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return b;
+    }
+    return null;
+  }
+
+  function highlightBins(x, y) {
+    const over = binUnder(x, y);
+    binEls.forEach(function (b) { b.classList.toggle('over', b === over); });
+  }
+
+  newRound();
+})();
+</script>
+</body>
+</html>

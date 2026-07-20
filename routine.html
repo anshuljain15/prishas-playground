@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>My Morning Routine 🪥 · Prisha's Playground</title>
+<meta name="description" content="Tap through the morning — brush teeth, get dressed, off to school — a free toddler good-habits game from Prisha's Playground.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<script>
+(function () { 'use strict';
+  let t = localStorage.getItem('lp_theme');
+  if (!t && matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+  if (t === 'dark') document.documentElement.dataset.theme = 'dark';
+})();
+</script>
+<link rel="stylesheet" href="shared.css">
+<style>
+  #wrap {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: clamp(18px, 4vh, 40px);
+    padding: 80px 16px 24px;
+  }
+
+  #dots { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .dot {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--surface-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    border: 2px solid transparent;
+  }
+  .dot.done { background: hsl(140, 65%, 55%); color: white; }
+  .dot.active { border-color: hsl(280, 70%, 55%); transform: scale(1.15); }
+
+  #instruction {
+    font-size: clamp(1.4rem, 5vw, 2.2rem);
+    font-weight: bold;
+    color: var(--ink-strong);
+    text-align: center;
+    max-width: 90vw;
+  }
+
+  #stage {
+    width: clamp(200px, 62vmin, 340px);
+    height: clamp(200px, 62vmin, 340px);
+    border-radius: 40px;
+    background: var(--surface-soft);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.14);
+    cursor: pointer;
+    position: relative;
+    touch-action: manipulation;
+  }
+
+  #item { font-size: clamp(7rem, 30vmin, 12rem); line-height: 1; }
+  #stage.tapped #item { animation: doTask 0.6s ease; }
+  @keyframes doTask {
+    0%,100% { transform: rotate(0) scale(1); }
+    20% { transform: rotate(-12deg) scale(1.1); }
+    50% { transform: rotate(12deg) scale(1.12); }
+    80% { transform: rotate(-6deg) scale(1.05); }
+  }
+
+  #check {
+    position: absolute; top: 10px; right: 10px;
+    font-size: 3rem; opacity: 0;
+  }
+  #stage.tapped #check { animation: pop 0.6s ease; }
+  @keyframes pop { 0%{opacity:0;transform:scale(0)} 50%{opacity:1;transform:scale(1.3)} 100%{opacity:1;transform:scale(1)} }
+
+  #tapHint {
+    font-size: clamp(1rem, 3vw, 1.3rem);
+    font-weight: bold;
+    color: var(--ink);
+    opacity: 0.75;
+  }
+</style>
+</head>
+<body>
+
+<div id="wrap">
+  <div id="dots"></div>
+  <div id="instruction"></div>
+  <div id="stage"><span id="item"></span><span id="check">✅</span></div>
+  <div id="tapHint">👆 Tap to do it!</div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const STEPS = [
+    ['☀️', 'Wake up!', 'Good morning! Time to wake up!', 'Good morning!'],
+    ['🪥', 'Brush your teeth', 'Tap to brush your teeth!', 'Scrub scrub! So clean!'],
+    ['🚿', 'Wash your face', 'Tap to wash your face!', 'Splish splash! All fresh!'],
+    ['👕', 'Get dressed', 'Tap to put on your clothes!', 'Getting dressed! Looking good!'],
+    ['🥣', 'Eat breakfast', 'Tap to eat your yummy breakfast!', 'Yum yum! All full!'],
+    ['🎒', 'Pack your bag', 'Tap to pack your backpack!', 'Backpack ready!'],
+    ['🚌', 'Off to school', 'Tap to go to school!', 'Bye bye! Have a great day!']
+  ];
+
+  LP.initPage({ showCounter: false });
+
+  const dotsEl = document.getElementById('dots');
+  const instr = document.getElementById('instruction');
+  const stage = document.getElementById('stage');
+  const itemEl = document.getElementById('item');
+  const tapHint = document.getElementById('tapHint');
+  let idx = 0;
+  let busy = false;
+
+  STEPS.forEach(function (s, i) {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    d.textContent = s[0];
+    d.dataset.i = i;
+    dotsEl.appendChild(d);
+  });
+
+  function render() {
+    const step = STEPS[idx];
+    itemEl.textContent = step[0];
+    instr.textContent = step[1];
+    tapHint.style.display = '';
+    Array.from(dotsEl.children).forEach(function (d, i) {
+      d.classList.toggle('done', i < idx);
+      d.classList.toggle('active', i === idx);
+    });
+    LP.speak(step[2]);
+  }
+
+  function doStep() {
+    if (busy) return;
+    busy = true;
+    const step = STEPS[idx];
+    stage.classList.remove('tapped'); void stage.offsetWidth; stage.classList.add('tapped');
+    const rect = stage.getBoundingClientRect();
+    LP.burstAt(rect.left + rect.width / 2, rect.top + rect.height / 3, ['✨', '⭐', '💫']);
+    LP.speak(step[3], true);
+    tapHint.style.display = 'none';
+
+    setTimeout(function () {
+      idx++;
+      if (idx >= STEPS.length) {
+        finish();
+      } else {
+        busy = false;
+        render();
+      }
+    }, 1300);
+  }
+
+  function finish() {
+    Array.from(dotsEl.children).forEach(function (d) { d.classList.add('done'); d.classList.remove('active'); });
+    instr.textContent = '🎉 All ready for the day!';
+    itemEl.textContent = '🌟';
+    tapHint.textContent = '👆 Tap to do it all again!';
+    tapHint.style.display = '';
+    LP.celebrate('All ready for the day, ' + LP.playerName + '!');
+    busy = false;
+    idx = -1; // next tap restarts
+  }
+
+  stage.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    if (idx === -1) { idx = 0; render(); return; }
+    doStep();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    const key = LP.guardKey(e);
+    if (key === null) return;
+    if (idx === -1) { idx = 0; render(); return; }
+    doStep();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

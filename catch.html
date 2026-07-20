@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Catch the Treats 🧺 · Prisha's Playground</title>
+<meta name="description" content="Move the basket to catch falling fruit — a free toddler eye-hand coordination game from Prisha's Playground.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<script>
+(function () { 'use strict';
+  let t = localStorage.getItem('lp_theme');
+  if (!t && matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+  if (t === 'dark') document.documentElement.dataset.theme = 'dark';
+})();
+</script>
+<link rel="stylesheet" href="shared.css">
+<style>
+  #field { position: fixed; inset: 0; overflow: hidden; touch-action: none; }
+
+  .falling {
+    position: fixed;
+    font-size: clamp(2.6rem, 8vw, 3.8rem);
+    line-height: 1;
+    z-index: 6;
+    will-change: transform;
+    pointer-events: none;
+  }
+
+  .falling.caught { animation: caughtPop 0.35s ease forwards; }
+  @keyframes caughtPop {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 1; }
+    100% { transform: scale(0.2); opacity: 0; }
+  }
+  .falling.missed { animation: missedFade 0.5s ease forwards; }
+  @keyframes missedFade {
+    to { transform: translateY(40px) scale(0.6); opacity: 0; }
+  }
+
+  #basket {
+    position: fixed;
+    bottom: 24px;
+    font-size: clamp(3.4rem, 12vw, 5rem);
+    line-height: 1;
+    z-index: 10;
+    transform: translateX(-50%);
+    pointer-events: none;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
+  }
+
+  #basket.catch { animation: basketBob 0.25s ease; }
+  @keyframes basketBob {
+    50% { transform: translateX(-50%) translateY(-8px) scale(1.08); }
+  }
+
+  #hint {
+    position: fixed; left: 50%; top: 70px;
+    transform: translateX(-50%);
+    font-size: clamp(1rem, 3vw, 1.35rem);
+    font-weight: bold;
+    color: var(--ink);
+    background: var(--surface-soft);
+    padding: 6px 20px; border-radius: 999px;
+    pointer-events: none; z-index: 8; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<div id="field">
+  <div id="basket">🧺</div>
+</div>
+<div id="hint">🧺 Move the basket to catch the treats!</div>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const FRUITS = [
+    ['🍎','Apple'],['🍌','Banana'],['🍓','Strawberry'],['🍇','Grapes'],
+    ['🍊','Orange'],['🍉','Watermelon'],['🍑','Peach'],['🥝','Kiwi'],
+    ['⭐','Star'],['🍒','Cherry']
+  ];
+
+  LP.initPage({ counterEmoji: '🧺', milestone: 10 });
+  LP.speak('Catch the treats, ' + LP.playerName + '!');
+
+  const field = document.getElementById('field');
+  const basket = document.getElementById('basket');
+
+  let basketX = innerWidth / 2;
+  const items = [];
+  let lastSpawn = 0;
+  let spawnGap = 1400;       // ms between drops; shrinks slowly
+  let fallSpeed = 0.10;      // px per ms; grows slowly
+  let caughtTotal = 0;
+  let lastTime = 0;
+  let running = true;
+
+  function setBasket(x) {
+    basketX = Math.max(40, Math.min(innerWidth - 40, x));
+    basket.style.left = basketX + 'px';
+  }
+  setBasket(basketX);
+
+  field.addEventListener('pointerdown', function (e) { setBasket(e.clientX); });
+  field.addEventListener('pointermove', function (e) {
+    if (e.pointerType === 'mouse' && e.buttons === 0) { setBasket(e.clientX); return; }
+    setBasket(e.clientX);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    const key = LP.guardKey(e);
+    if (key === null) return;
+    if (key === 'ArrowLeft') setBasket(basketX - 60);
+    else if (key === 'ArrowRight') setBasket(basketX + 60);
+  });
+
+  function spawn() {
+    const fruit = LP.pick(FRUITS);
+    const el = document.createElement('div');
+    el.className = 'falling';
+    el.textContent = fruit[0];
+    el.dataset.word = fruit[1];
+    const x = LP.rand(40, innerWidth - 40);
+    const item = { el: el, x: x, y: -60, word: fruit[1], done: false };
+    el.style.left = x + 'px';
+    el.style.top = '-60px';
+    field.appendChild(el);
+    items.push(item);
+  }
+
+  const BASKET_TOP = () => innerHeight - 24 - (basket.offsetHeight || 70);
+
+  function loop(t) {
+    if (!running) return;
+    if (!lastTime) lastTime = t;
+    const dt = Math.min(48, t - lastTime);
+    lastTime = t;
+
+    if (t - lastSpawn > spawnGap) {
+      lastSpawn = t;
+      spawn();
+      spawnGap = Math.max(750, spawnGap - 12);   // gentle ramp
+      fallSpeed = Math.min(0.22, fallSpeed + 0.001);
+    }
+
+    const catchY = BASKET_TOP();
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i];
+      if (it.done) continue;
+      it.y += fallSpeed * dt;
+      it.el.style.transform = 'translateY(' + it.y + 'px)';
+
+      // catch test
+      if (it.y >= catchY - 40 && it.y <= catchY + 50 && Math.abs(it.x - basketX) < 56) {
+        it.done = true;
+        it.el.classList.add('caught');
+        LP.burstAt(it.x, catchY, ['✨', '⭐']);
+        basket.classList.remove('catch'); void basket.offsetWidth; basket.classList.add('catch');
+        caughtTotal++;
+        if (caughtTotal % 3 === 0) LP.speak(it.word + '!');
+        LP.bumpCounter();
+        setTimeout(function () { it.el.remove(); }, 350);
+        items.splice(i, 1);
+      } else if (it.y > innerHeight + 10) {
+        it.done = true;
+        it.el.remove();
+        items.splice(i, 1);
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // pause when tab hidden so nothing piles up / runs away
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { running = false; }
+    else if (!running) { running = true; lastTime = 0; lastSpawn = 0; requestAnimationFrame(loop); }
+  });
+
+  addEventListener('resize', function () { setBasket(basketX); });
+})();
+</script>
+</body>
+</html>

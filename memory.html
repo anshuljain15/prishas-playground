@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Memory Match 🃏 · Prisha's Playground</title>
+<meta name="description" content="Flip the cards and find the matching animals — a free toddler memory game from Prisha's Playground.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
+<script>
+(function () { 'use strict';
+  let t = localStorage.getItem('lp_theme');
+  if (!t && matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+  if (t === 'dark') document.documentElement.dataset.theme = 'dark';
+})();
+</script>
+<link rel="stylesheet" href="shared.css">
+<style>
+  #wrap {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px; padding: 80px 14px 20px;
+  }
+
+  #hint {
+    font-size: clamp(1rem, 3vw, 1.35rem);
+    font-weight: bold; color: var(--ink);
+    background: var(--surface-soft);
+    padding: 6px 20px; border-radius: 999px;
+  }
+
+  #grid { display: grid; gap: clamp(8px, 2.5vw, 16px); }
+
+  .card2 {
+    width: var(--csz); height: var(--csz);
+    border-radius: 18px;
+    cursor: pointer;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.35s ease;
+    touch-action: manipulation;
+  }
+  .card2.up, .card2.matched { transform: rotateY(180deg); }
+
+  .card2 .face {
+    position: absolute; inset: 0;
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+  }
+  .card2 .back {
+    background: linear-gradient(145deg, hsl(255,70%,58%), hsl(285,65%,52%));
+    font-size: calc(var(--csz) * 0.45);
+  }
+  .card2 .front {
+    background: hsl(45, 100%, 92%);
+    transform: rotateY(180deg);
+    font-size: calc(var(--csz) * 0.55);
+  }
+  html[data-theme="dark"] .card2 .front { background: hsl(250, 25%, 30%); }
+
+  .card2.matched { animation: matchGlow 0.7s ease; }
+  @keyframes matchGlow { 50% { transform: rotateY(180deg) scale(1.12); } }
+</style>
+</head>
+<body>
+
+<div id="wrap">
+  <div id="hint">🃏 Find the matching pairs!</div>
+  <div id="grid"></div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const ANIMALS = [
+    ['🐶','Dog'],['🐱','Cat'],['🐰','Rabbit'],['🐼','Panda'],
+    ['🦁','Lion'],['🐸','Frog'],['🐵','Monkey'],['🐧','Penguin'],
+    ['🦊','Fox'],['🐮','Cow']
+  ];
+
+  LP.initPage({ counterEmoji: '🃏', milestone: 3 });
+  LP.speak('Find the matching pairs, ' + LP.playerName + '!');
+
+  const grid = document.getElementById('grid');
+  let pairs = 2;          // start easy (2x2), grow after each win
+  let first = null, lock = false, matchedCount = 0;
+
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function layout(n) {
+    // choose columns so the board stays squarish
+    const cols = n <= 2 ? 2 : (n <= 4 ? (n === 3 ? 3 : 4) : (n <= 6 ? 4 : 4));
+    const total = n * 2;
+    const rows = Math.ceil(total / cols);
+    const sz = Math.max(58, Math.floor(Math.min(
+      (Math.min(innerWidth - 40, 520)) / cols,
+      (innerHeight - 220) / rows
+    )) - 12);
+    document.documentElement.style.setProperty('--csz', sz + 'px');
+    grid.style.gridTemplateColumns = 'repeat(' + cols + ', var(--csz))';
+  }
+
+  function build() {
+    const chosen = shuffle(ANIMALS.slice()).slice(0, pairs);
+    const deck = shuffle(chosen.concat(chosen).map(function (a) { return a; }));
+    layout(pairs);
+    grid.innerHTML = '';
+    matchedCount = 0; first = null; lock = false;
+    deck.forEach(function (animal) {
+      const card = document.createElement('div');
+      card.className = 'card2';
+      card.dataset.key = animal[0];
+      card.dataset.word = animal[1];
+      card.innerHTML =
+        '<div class="face back">❓</div>' +
+        '<div class="face front">' + animal[0] + '</div>';
+      card.addEventListener('pointerdown', function (e) { e.preventDefault(); flip(card); });
+      grid.appendChild(card);
+    });
+  }
+
+  function flip(card) {
+    if (lock || card === first || card.classList.contains('matched') || card.classList.contains('up')) return;
+    card.classList.add('up');
+
+    if (!first) { first = card; return; }
+
+    if (first.dataset.key === card.dataset.key) {
+      // match
+      lock = true;
+      setTimeout(function () {
+        first.classList.add('matched'); card.classList.add('matched');
+        first.classList.remove('up'); card.classList.remove('up');
+        const rect = card.getBoundingClientRect();
+        LP.burstAt(rect.left + rect.width / 2, rect.top + rect.height / 2, ['✨','⭐','🎉']);
+        LP.speak(card.dataset.word + '!');
+        LP.bumpCounter();
+        matchedCount++;
+        first = null; lock = false;
+        if (matchedCount === pairs) {
+          setTimeout(function () {
+            LP.celebrate('You found them all, ' + LP.playerName + '!');
+            pairs = Math.min(6, pairs + 1);
+            setTimeout(build, 1600);
+          }, 400);
+        }
+      }, 350);
+    } else {
+      // no match, flip both back
+      lock = true;
+      const a = first, b = card;
+      setTimeout(function () {
+        a.classList.remove('up'); b.classList.remove('up');
+        first = null; lock = false;
+      }, 1000);
+    }
+  }
+
+  addEventListener('resize', function () { layout(pairs); });
+  build();
+})();
+</script>
+</body>
+</html>
